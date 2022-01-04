@@ -350,7 +350,7 @@ void diagIO(void)
 			}
 			else if(2 == Vehicle_cmd.cmdmode.data.gear_state)//后退档
 			{
-				if(1 == Vehicle_cmd.cmdmode.data.brake_state)
+				if(1 == Vehicle_cmd.cmdmode.data.brake_state) //刹车
 				{
 					if(1 == Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)
 					{
@@ -1128,7 +1128,7 @@ void AIFeedback(void)
 	_iq ai_deta = 0;
 	_iq AI1_ad_tmp = 0;
 
-	if(TRQCMD_SOURCE_AI == EV_MCU_Para.field.TrqCmd_SourceType)
+	if(TRQCMD_SOURCE_AI == EV_MCU_Para.field.TrqCmd_SourceType)   //力矩命令来源 = 0 AI
 	{
 		if(sysFbkPara.AI1_fbk_ad>EV_MCU_Para.field.AI1_offset_off)
 		{

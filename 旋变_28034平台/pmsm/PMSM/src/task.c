@@ -438,14 +438,14 @@ void taskGetVehicleIoState(void)        //读io状态  吴
 	Uint16 io_state_old_bit_value = 0;
 
 	//Get the current io state value
-	vehicle_io_state_new.data.DI1_WAKEUP_DSP   = GpioDataRegs.GPADAT.bit.GPIO25;
-	vehicle_io_state_new.data.DI2_BRRAK_DSP    = GpioDataRegs.GPADAT.bit.GPIO26;
-	vehicle_io_state_new.data.DI3_DSP          = GpioDataRegs.GPADAT.bit.GPIO14;
-	vehicle_io_state_new.data.DI4_DSP          = GpioDataRegs.AIODAT.bit.AIO14;
-	vehicle_io_state_new.data.DI5_DSP          = GpioDataRegs.AIODAT.bit.AIO12;
-	vehicle_io_state_new.data.DI6_DSP          = GpioDataRegs.GPADAT.bit.GPIO22;
-	vehicle_io_state_new.data.DI7_DSP          = GpioDataRegs.GPADAT.bit.GPIO28;
-	vehicle_io_state_new.data.DI8_DSP          = GpioDataRegs.GPADAT.bit.GPIO27;
+	vehicle_io_state_new.data.DI1_WAKEUP_DSP   = GpioDataRegs.GPADAT.bit.GPIO25;  //钥匙开关输入
+	vehicle_io_state_new.data.DI2_BRRAK_DSP    = GpioDataRegs.GPADAT.bit.GPIO26;  //刹车输入
+	vehicle_io_state_new.data.DI3_DSP          = GpioDataRegs.GPADAT.bit.GPIO14;  //数字输入
+	vehicle_io_state_new.data.DI4_DSP          = GpioDataRegs.AIODAT.bit.AIO14;   //数字输入
+	vehicle_io_state_new.data.DI5_DSP          = GpioDataRegs.AIODAT.bit.AIO12;   //数字输入
+	vehicle_io_state_new.data.DI6_DSP          = GpioDataRegs.GPADAT.bit.GPIO22;  //数字输入
+	vehicle_io_state_new.data.DI7_DSP          = GpioDataRegs.GPADAT.bit.GPIO28;  //数字输入
+	vehicle_io_state_new.data.DI8_DSP          = GpioDataRegs.GPADAT.bit.GPIO27;  //数字输入
 	vehicle_io_state_new.data.LOT              = GpioDataRegs.GPBDAT.bit.GPIO42;
 	vehicle_io_state_new.data.DOS              = GpioDataRegs.GPBDAT.bit.GPIO43;
 	for(read_vehicle_io_state_index=0;read_vehicle_io_state_index<8;read_vehicle_io_state_index++)
