@@ -325,10 +325,10 @@ void speedlooplmtcond()
 {
 	//_iq factor = 0;
 	_iq speed_up = 0;
-	_iq speed_lmt = 0;
-	_iq speed_exit = 0;
+	_iq speed_lmt = 0;    //速度限制
+	_iq speed_exit = 0;   //离开限速的阈值
 	_iq tooth_trq = 0;
-	_iq tooth_trq_exit = 0;
+	_iq tooth_trq_exit = 0;  //贴齿力矩阈值
 	_iq spd_lmt_up_step = 0;
 	_iq spd_lmt_down_step = 0;
 	_iq x_value= 0;
@@ -337,366 +337,372 @@ void speedlooplmtcond()
 	_iq trq_step = 0;
 	_iq max_unload_trq_step = 0;
 	
-	if((1 == EV_MCU_Para.field.Spd_Over_Limt_enable)
-	 &&(1 == scsw2.field.igbt_state))
+	if((1 == EV_MCU_Para.field.Spd_Over_Limt_enable)   //限速使能
+	 &&(1 == scsw2.field.igbt_state)) //逆变器开管
 	{
-		tooth_trq = _IQ15toIQ(EV_MCU_Para.field.Tooth_trq);
-		tooth_trq_exit = tooth_trq+SysBase.invtorque;
-		trq_lmt = _IQmpyI32(10,SysBase.invtorque);
-		spd_lmt_exit_trq_deta = _IQmpyI32(5,SysBase.invtorque);
-		trq_step = _IQmpy(_IQ(0.01),SysBase.invtorque);
-		max_unload_trq_step = _IQmpy(_IQ(0.03),SysBase.invtorque);
+		tooth_trq = _IQ15toIQ(EV_MCU_Para.field.Tooth_trq);//贴齿力矩（最大贴齿力矩 2/500）<< 9位 = 2.048
+		tooth_trq_exit = tooth_trq+SysBase.invtorque;//贴齿力矩阈值 2.048 +1/500 = 2.05
+		trq_lmt = _IQmpyI32(10,SysBase.invtorque);// 1/50 = 0.02
+		spd_lmt_exit_trq_deta = _IQmpyI32(5,SysBase.invtorque);// 1/100
+		trq_step = _IQmpy(_IQ(0.01),SysBase.invtorque);// 1/50000
+		max_unload_trq_step = _IQmpy(_IQ(0.03),SysBase.invtorque);  // 3/50000
 		
-		if(1 == VCU_IOstate.field.In_fwdrev)
+		if(1 == VCU_IOstate.field.In_fwdrev)//当前的档位为D档  前进档    1 = D  2 = R  0 = N
 		{
-			if(1 == vehicle_io_state.data.DI6_DSP)//低速档
+			if(1 == vehicle_io_state.data.DI6_DSP)//刹车\低速档  未赋值
 			{
-				speed_up = EV_MCU_Para.field.Spd_FWD_L_Limt_Spd-_IQ15div(300,SysBase.speed);
-				speed_exit = EV_MCU_Para.field.Spd_FWD_L_Limt_Spd-_IQ15div(1000,SysBase.speed);
-				if(speed_up<0)
+				speed_up = EV_MCU_Para.field.Spd_FWD_L_Limt_Spd-_IQ15div(300,SysBase.speed); //(L档前进速度限制 4500/12000) - 300/12000  = 4200/12000 = 0.35
+				speed_exit = EV_MCU_Para.field.Spd_FWD_L_Limt_Spd-_IQ15div(1000,SysBase.speed);//(L档前进速度限制 4500/12000) - 1000/12000  = 3500/12000 ≈ 0.292
+				if(speed_up<0)//N
 				{
 					speed_up = EV_MCU_Para.field.Spd_FWD_L_Limt_Spd;
 				}
-				if(speed_exit<0)
+				if(speed_exit<0)//N
 				{
 					speed_exit = 0;
 				}
-				speed_lmt = EV_MCU_Para.field.Spd_FWD_L_Limt_Spd;
+				speed_lmt = EV_MCU_Para.field.Spd_FWD_L_Limt_Spd;// 4500/12000 = 0.375 = 3/8
 			}
 			else//高速档
 			{
-				speed_up = EV_MCU_Para.field.Spd_FWD_Limt_Spd-_IQ15div(300,SysBase.speed);
-				speed_exit = EV_MCU_Para.field.Spd_FWD_Limt_Spd-_IQ15div(1000,SysBase.speed);
+				speed_up = EV_MCU_Para.field.Spd_FWD_Limt_Spd-_IQ15div(300,SysBase.speed); //(前进速度限制 4500/12000) - 300/12000  = 4200/12000 = 0.35
+				speed_exit = EV_MCU_Para.field.Spd_FWD_Limt_Spd-_IQ15div(1000,SysBase.speed);//(前进速度限制 4500/12000) - 1000/12000  = 3500/12000 ≈ 0.292
 				if(speed_up<0)
 				{
-					speed_up = EV_MCU_Para.field.Spd_FWD_Limt_Spd;
+					speed_up = EV_MCU_Para.field.Spd_FWD_Limt_Spd;// 4500/12000 = 0.375 = 3/8
 				}
 				if(speed_exit<0)
 				{
 					speed_exit = 0;
 				}
-				speed_lmt = EV_MCU_Para.field.Spd_FWD_Limt_Spd;
+				speed_lmt = EV_MCU_Para.field.Spd_FWD_Limt_Spd;// 4500/12000 = 0.375 = 3/8
 			}
 			
 		}
 		else if(2 == VCU_IOstate.field.In_fwdrev)//后退档
 		{
-			if(1 == vehicle_io_state.data.DI6_DSP)//低速档
+			if(1 == vehicle_io_state.data.DI6_DSP)//刹车\低速档  未赋值
 			{
-				speed_up = (-EV_MCU_Para.field.Spd_FWD_E_Limt_Spd)+_IQ15div(300,SysBase.speed);
-				speed_exit = (-EV_MCU_Para.field.Spd_FWD_E_Limt_Spd)+_IQ15div(600,SysBase.speed);
-				if(speed_up>0)
+				speed_up = (-EV_MCU_Para.field.Spd_FWD_E_Limt_Spd)+_IQ15div(300,SysBase.speed);// -(E档前进速度限制 1600/12000) + 300/12000 = -1300/12000 ≈ -0.108
+				speed_exit = (-EV_MCU_Para.field.Spd_FWD_E_Limt_Spd)+_IQ15div(600,SysBase.speed);// -(E档前进速度限制 1600/12000) + 600/12000 = -1000/12000 ≈ -0.083
+				if(speed_up>0)//N
 				{
 					speed_up = 0-EV_MCU_Para.field.Spd_FWD_E_Limt_Spd;
 				}
-				if(speed_exit>0)
+				if(speed_exit>0)//Y
 				{
 					speed_exit = 0;
 				}
-				speed_lmt = 0-EV_MCU_Para.field.Spd_FWD_E_Limt_Spd;
+				speed_lmt = 0-EV_MCU_Para.field.Spd_FWD_E_Limt_Spd;//  -(E档前进速度限制 1600/12000) ≈ -0.133
 			}
 			else//高速档
 			{
-				speed_up = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(300,SysBase.speed);
-				speed_exit = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(1200,SysBase.speed);
-				if(speed_up>0)
+				speed_up = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(300,SysBase.speed);// -(后退速度限制 750/12000) + 300/12000  = -450/12000 = -0.0875 = -7/80
+				speed_exit = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(1200,SysBase.speed);// -(后退速度限制 750/12000) + 1200/12000 = 450/12000 = 0.0875 = 7/80
+				if(speed_up>0)//N
 				{
 					speed_up = 0-EV_MCU_Para.field.Spd_REV_Limt_Spd;
 				}
-				if(speed_exit>0)
+				if(speed_exit>0)//Y
 				{
 					speed_exit = 0;
 				}
-				speed_lmt = 0-EV_MCU_Para.field.Spd_REV_Limt_Spd;
+				speed_lmt = 0-EV_MCU_Para.field.Spd_REV_Limt_Spd;//  -(后退速度限制 750/12000) = -0.0625 = -5/80
 			}
 		}
-		else
+		else // 空挡
 		{
-			speed_up = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(300,SysBase.speed);
-			speed_exit = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(1200,SysBase.speed);
-			if(speed_up>0)
+			speed_up = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(300,SysBase.speed);// -(后退速度限制 750/12000) + 300/12000 = -450/12000 = -0.0875 = -7/80
+			speed_exit = (-EV_MCU_Para.field.Spd_REV_Limt_Spd)+_IQ15div(1200,SysBase.speed);// -(后退速度限制 750/12000) + 1200/12000 = 450/12000 = 0.0875 = 7/80
+			if(speed_up>0)//N
 			{
 				speed_up = 0-EV_MCU_Para.field.Spd_REV_Limt_Spd;
 			}
-			if(speed_exit>0)
+			if(speed_exit>0)//Y
 			{
 				speed_exit = 0;
 			}
-			speed_lmt = 0-EV_MCU_Para.field.Spd_REV_Limt_Spd;
+			speed_lmt = 0-EV_MCU_Para.field.Spd_REV_Limt_Spd;//  -(后退速度限制 750/12000) = -0.0625 = -5/80
 		}
 
-		if(1 == VCU_IOstate.field.limit_speed_flag)
+		//速度小于一定值后清除VCU限速标志
+		if(1 == VCU_IOstate.field.limit_speed_flag)// VCU限速标志
 		{
-			if(1 == Vehicle_cmd.cmdmode.data.gear_state)
+			if(1 == Vehicle_cmd.cmdmode.data.gear_state)//前进档 - 取自VCU_IOstate.field.In_fwdrev的值
 			{
-				if(sysFbkPara.Speed_fbk_HMI<speed_lmt+_IQ15div(50,SysBase.speed))
+				if(sysFbkPara.Speed_fbk_HMI<speed_lmt+_IQ15div(50,SysBase.speed))//(滤波后的速度反馈/瞬时速度)<速度限制(0.375 4500rpm)+ (50/12000≈0.0042) = 0.3792
 				{
-					VCU_IOstate.field.limit_speed_flag = 0;
+					VCU_IOstate.field.limit_speed_flag = 0;// 清除VCU限速标志
 				}
 			}
-			else
+			else//后退档 - 取自VCU_IOstate.field.In_fwdrev的值
 			{
-				if(sysFbkPara.Speed_fbk_HMI>speed_lmt-_IQ15div(50,SysBase.speed))
+				if(sysFbkPara.Speed_fbk_HMI>speed_lmt-_IQ15div(50,SysBase.speed))//(滤波后的速度反馈/瞬时速度)> 速度限制(-0.0625 -750rpm) - (50/12000≈0.0042) = -0.0067
 				{
-					VCU_IOstate.field.limit_speed_flag = 0;
-				}
-			}
-		}
-		else
-		{
-			if(1 == Vehicle_cmd.cmdmode.data.gear_state)
-			{
-				if(sysFbkPara.Speed_fbk_HMI>speed_lmt+_IQ15div(100,SysBase.speed))
-				{
-					VCU_IOstate.field.limit_speed_flag = 1;
-				}
-			}
-			else
-			{
-				if(sysFbkPara.Speed_fbk_HMI<speed_lmt-_IQ15div(100,SysBase.speed))
-				{
-					VCU_IOstate.field.limit_speed_flag = 1;
+					VCU_IOstate.field.limit_speed_flag = 0;// 清除VCU限速标志
 				}
 			}
 		}
-		
-		if(0 == scsw2.field.spdlmt_flag)
+		else//速度大于一定值后置位限速标志
 		{
-			if(0 != scsw2.field.SpdLmt_state)
+			if(1 == Vehicle_cmd.cmdmode.data.gear_state)//前进档 - 取自VCU_IOstate.field.In_fwdrev的值
 			{
-				if(1 == scsw2.field.SpdLmt_state)           //正向过速
+				if(sysFbkPara.Speed_fbk_HMI>speed_lmt+_IQ15div(100,SysBase.speed))//(滤波后的速度反馈/瞬时速度)>速度限制(0.375 4500rpm)+ (50/12000≈0.0042) = 0.3792
 				{
-					if(((sysCfgPara.TrqCmd_AIfilter+spd_lmt_exit_trq_deta)<spdLoopPara.TrqCmd_real)
-					 ||((_IQabs(sysCfgPara.TrqCmd_AIfilter)<=tooth_trq_exit)&&(0 == Vehicle_cmd.torque_ref))
-					 ||(sysFbkPara.Speed_fbk_HMI<speed_exit))//(给定+10Nm)＜速度闭环力矩
-					{
-						scsw2.field.SpdLmt_state    					=  0;
-						spdlmt_cmd                                      =  0;
-					}
-				}
-				else                                        //反向过速
-				{
-					if(((sysCfgPara.TrqCmd_AIfilter-spd_lmt_exit_trq_deta)>spdLoopPara.TrqCmd_real)
-					 ||((_IQabs(sysCfgPara.TrqCmd_AIfilter)<=tooth_trq_exit)&&(0 == Vehicle_cmd.torque_ref))
-					 ||(sysFbkPara.Speed_fbk_HMI>speed_exit))//(给定-10Nm)>速度闭环力矩
-					{
-						scsw2.field.SpdLmt_state    					=  0;
-						spdlmt_cmd                                      = 0;
-					}
+					VCU_IOstate.field.limit_speed_flag = 1;//置位VCU限速标志
 				}
 			}
-			else
+			else//后退档 - 取自VCU_IOstate.field.In_fwdrev的值
 			{
-				if((1 == Vehicle_cmd.cmdmode.data.gear_state)
-				  &&(sysFbkPara.Speed_fbk_HMI>speed_up)
-				  &&(0 == VCU_IOstate.field.limit_speed_flag)
-				  &&(0 != Vehicle_cmd.torque_ref))
+				if(sysFbkPara.Speed_fbk_HMI<speed_lmt-_IQ15div(100,SysBase.speed))//(滤波后的速度反馈/瞬时速度)< 速度限制(-0.0625 -750rpm) - (50/12000≈0.0042) = -0.0067
 				{
-					scsw2.field.spdlmt_flag                         =  1;
-					spdlmt_trq_filter = spdlmt_trq                                      =  trqLoop_trqRampref;
-				}
-				else if((2 == Vehicle_cmd.cmdmode.data.gear_state)
-					  &&(sysFbkPara.Speed_fbk_HMI<speed_up)
-					  &&(0 == VCU_IOstate.field.limit_speed_flag)
-					  &&(0 != Vehicle_cmd.torque_ref))
-				{
-					scsw2.field.spdlmt_flag                         =  2;
-					spdlmt_trq_filter = spdlmt_trq                                      =  trqLoop_trqRampref;
-				}
-			}
-		}
-		else
-		{
-			if(1 == scsw2.field.spdlmt_flag)
-			{
-				if(spdlmt_trq>tooth_trq)
-				{
-					if(spdlmt_trq<=trq_lmt)
-					{
-						x_value = _IQabs(spdlmt_trq);
-						x_value = -_IQmpy(_IQ(31.25),x_value)+_IQ(0.625);
-						spd_lmt_down_step = -_IQmpy(_IQ(0.00008),x_value)+_IQmpy(_IQ(0.03),SysBase.invtorque);
-					}
-					else
-					{
-						spd_lmt_down_step = max_unload_trq_step;
-					}
-					if(spd_lmt_down_step>max_unload_trq_step)
-					{
-						spd_lmt_down_step = max_unload_trq_step;
-					}
-					else if(spd_lmt_down_step<trq_step)
-					{
-						spd_lmt_down_step = trq_step;
-					}
-					
-					if((spdlmt_trq-spd_lmt_down_step)>tooth_trq)
-					{
-						spdlmt_trq = spdlmt_trq-spd_lmt_down_step;
-					}
-					else
-					{
-						spdlmt_trq = tooth_trq;
-					}
-				}
-				else if(spdlmt_trq<-tooth_trq)
-				{
-					if(spdlmt_trq>=-trq_lmt)
-					{
-						x_value = _IQabs(spdlmt_trq);
-						x_value = -_IQmpy(_IQ(31.25),x_value)+_IQ(0.625);
-						spd_lmt_up_step = -_IQmpy(_IQ(0.00008),x_value)+_IQmpy(_IQ(0.03),SysBase.invtorque);
-					}
-					else
-					{
-						spd_lmt_up_step = max_unload_trq_step;
-					}
-					if(spd_lmt_up_step>max_unload_trq_step)
-					{
-						spd_lmt_up_step = max_unload_trq_step;
-					}
-					else if(spd_lmt_up_step<trq_step)
-					{
-						spd_lmt_up_step = trq_step;
-					}
-					
-					if((spdlmt_trq+spd_lmt_up_step)<-tooth_trq)
-					{
-						spdlmt_trq = spdlmt_trq+spd_lmt_up_step;
-					}
-					else
-					{
-						spdlmt_trq = -tooth_trq;
-					}
-				}
-				else
-				{
-					spd_lmt_up_step = trq_step;
-					spdlmt_trq = spdlmt_trq+spd_lmt_up_step;
-					if(spdlmt_trq>tooth_trq)
-					{
-						spdlmt_trq = tooth_trq;
-					}
-				}
-
-				if(1 == VCU_IOstate.field.limit_speed_flag)
-				{
-					spdlmt_trq = tooth_trq;
-				}
-
-				if(spdlmt_trq == tooth_trq)
-				{
-					scsw2.field.SpdLmt_state = 1;
-					scsw2.field.spdlmt_flag = 0;
-					spdlmt_cmd = sysFbkPara.Speed_fbk_Filter+_IQdiv(50,SysBase.speed);
-					if(spdlmt_cmd>_IQ15toIQ(speed_lmt))
-					{
-						spdlmt_cmd = _IQ15toIQ(speed_lmt);
-					}
-				}
-			}
-			else
-			{
-				if(spdlmt_trq>tooth_trq)
-				{
-					if(spdlmt_trq<=trq_lmt)
-					{
-						x_value = _IQabs(spdlmt_trq);
-						x_value = -_IQmpy(_IQ(62.5),x_value)+_IQ(1.25);
-						spd_lmt_down_step = -_IQmpy(_IQ(0.00008),x_value)+_IQmpy(_IQ(0.03),SysBase.invtorque);
-					}
-					else
-					{
-						spd_lmt_down_step = max_unload_trq_step;
-					}
-					if(spd_lmt_down_step>max_unload_trq_step)
-					{
-						spd_lmt_down_step = max_unload_trq_step;
-					}
-					else if(spd_lmt_down_step<trq_step)
-					{
-						spd_lmt_down_step = trq_step;
-					}
-					
-					if((spdlmt_trq-spd_lmt_down_step)>tooth_trq)
-					{
-						spdlmt_trq = spdlmt_trq-spd_lmt_down_step;
-					}
-					else
-					{
-						spdlmt_trq = tooth_trq;
-					}
-				}
-				else if(spdlmt_trq<-tooth_trq)
-				{
-					if(spdlmt_trq>=-trq_lmt)
-					{
-						x_value = _IQabs(spdlmt_trq);
-						x_value = -_IQmpy(_IQ(62.5),x_value)+_IQ(1.25);
-						spd_lmt_up_step = -_IQmpy(_IQ(0.00036),x_value)+_IQmpy(_IQ(0.19),SysBase.invtorque);
-					}
-					else
-					{
-						spd_lmt_up_step = _IQmpy(_IQ(0.19),SysBase.invtorque);
-					}
-					if(spd_lmt_up_step>_IQmpy(_IQ(0.19),SysBase.invtorque))
-					{
-						spd_lmt_up_step = _IQmpy(_IQ(0.19),SysBase.invtorque);
-					}
-					else if(spd_lmt_up_step<trq_step)
-					{
-						spd_lmt_up_step = trq_step;
-					}
-					
-					if((spdlmt_trq+spd_lmt_up_step)<-tooth_trq)
-					{
-						spdlmt_trq = spdlmt_trq+spd_lmt_up_step;
-					}
-					else
-					{
-						spdlmt_trq = -tooth_trq;
-					}
-				}
-				else
-				{
-					spd_lmt_down_step = trq_step;
-					spdlmt_trq = spdlmt_trq-spd_lmt_down_step;
-					if(spdlmt_trq<-tooth_trq)
-					{
-						spdlmt_trq = -tooth_trq;
-					}
-				}
-
-				if(1 == VCU_IOstate.field.limit_speed_flag)
-				{
-					spdlmt_trq = -tooth_trq;
-				}
-
-				if(spdlmt_trq == -tooth_trq)
-				{
-					scsw2.field.SpdLmt_state = 2;
-					scsw2.field.spdlmt_flag = 0;
-					spdlmt_cmd = sysFbkPara.Speed_fbk_Filter-_IQdiv(50,SysBase.speed);
-					if(spdlmt_cmd<_IQ15toIQ(speed_lmt))
-					{
-						spdlmt_cmd = _IQ15toIQ(speed_lmt);
-					}
+					VCU_IOstate.field.limit_speed_flag = 1;//置位VCU限速标志
 				}
 			}
 		}
 		
-		if(((0 == scsw2.field.igbt_state)||(MTR_TRQ_LOOP != sccw1.field.runLoop_mode)||(0 == Vehicle_cmd.cmdmode.data.gear_state))
-		 &&((0 != scsw2.field.SpdLmt_state)||(0 != scsw2.field.spdlmt_flag)))
+
+		if(0 == scsw2.field.spdlmt_flag) //  scsw2限速标志为0
 		{
-			sysCfgPara.TrqCmd_AIfilter = sysCfgPara.TrqCmd_AI = trqLoop_trqRampref;
-			scsw2.field.SpdLmt_state = 0;
-			scsw2.field.spdlmt_flag = 0;
+			if(0 != scsw2.field.SpdLmt_state) //有限速           0:不限速    1：正向限速   2：反向限速
+			{
+				if(1 == scsw2.field.SpdLmt_state)           //正向限速状态
+				{
+					if(((sysCfgPara.TrqCmd_AIfilter+spd_lmt_exit_trq_deta)<spdLoopPara.TrqCmd_real)//(给定+10Nm(0.01))＜速度闭环力矩
+					 ||((_IQabs(sysCfgPara.TrqCmd_AIfilter)<=tooth_trq_exit)&&(0 == Vehicle_cmd.torque_ref))//给定力矩<贴齿力矩阈值&&驱动力矩=0
+					 ||(sysFbkPara.Speed_fbk_HMI<speed_exit))// 转速 < 离开限速的阈值 = 0.292 3500rpm
+					{
+						scsw2.field.SpdLmt_state    					=  0;//限速状态设为不限速
+						spdlmt_cmd                                      =  0;//限速控制清零
+					}
+				}
+				else                                        //反向限速状态
+				{
+					if(((sysCfgPara.TrqCmd_AIfilter-spd_lmt_exit_trq_deta)>spdLoopPara.TrqCmd_real)//(给定-10Nm(0.01))>速度闭环力矩
+					 ||((_IQabs(sysCfgPara.TrqCmd_AIfilter)<=tooth_trq_exit)&&(0 == Vehicle_cmd.torque_ref))//给定力矩<贴齿力矩阈值&&驱动力矩=0
+					 ||(sysFbkPara.Speed_fbk_HMI>speed_exit))// 转速 > 离开限速的阈值 = -0.0625  -1950rpm
+					{
+						scsw2.field.SpdLmt_state    					=  0;//限速状态设为不限速
+						spdlmt_cmd                                      = 0;//限速控制清零
+					}
+				}
+			}
+			else //无限速
+			{
+				if((1 == Vehicle_cmd.cmdmode.data.gear_state)  //前进档 - 取自VCU_IOstate.field.In_fwdrev的值
+				  &&(sysFbkPara.Speed_fbk_HMI>speed_up)//(滤波后的速度反馈/瞬时速度)>上升速度(0.35 4200rpm)
+				  &&(0 == VCU_IOstate.field.limit_speed_flag)//限速标志为0/未限速
+				  &&(0 != Vehicle_cmd.torque_ref))//驱动力矩≠0
+				{
+					scsw2.field.spdlmt_flag                         =  1; //正向限速
+					spdlmt_trq_filter = spdlmt_trq                                      =  trqLoop_trqRampref;
+			      //限速扭矩滤波          限速扭矩                                                扭矩指令
+				}
+				else if((2 == Vehicle_cmd.cmdmode.data.gear_state) //后退档 - 取自VCU_IOstate.field.In_fwdrev的值
+					  &&(sysFbkPara.Speed_fbk_HMI<speed_up)//(滤波后的速度反馈/瞬时速度)<反向速度(-0.0875 -1050rpm)
+					  &&(0 == VCU_IOstate.field.limit_speed_flag)//限速标志为0/未限速
+					  &&(0 != Vehicle_cmd.torque_ref))//驱动力矩≠0
+				{
+					scsw2.field.spdlmt_flag                         =  2; //反向限速
+					spdlmt_trq_filter = spdlmt_trq                                      =  trqLoop_trqRampref;
+				   //限速扭矩滤波          限速扭矩                                                扭矩指令
+				}
+			}
+		}
+		else //scsw2限速标志为非0
+		{
+			if(1 == scsw2.field.spdlmt_flag)  //正向限速标志
+			{
+				if(spdlmt_trq>tooth_trq)//限速扭矩 > 贴齿扭矩 = 2.048
+				{
+					if(spdlmt_trq<=trq_lmt) //限速扭矩 <= 扭矩限制 = 0.02
+					{
+						x_value = _IQabs(spdlmt_trq); //限速扭矩的绝对值
+						x_value = -_IQmpy(_IQ(31.25),x_value)+_IQ(0.625); // 0.625-(限速扭矩的绝对值*31.25)
+						spd_lmt_down_step = -_IQmpy(_IQ(0.00008),x_value)+_IQmpy(_IQ(0.03),SysBase.invtorque);//限速扭矩下降的步长
+					}
+					else //限速扭矩 > 扭矩限制 = 0.02
+					{
+						spd_lmt_down_step = max_unload_trq_step; //限速扭矩下降的步长 = 无负载最大扭矩下降步长 = 3/50000
+					}
+					if(spd_lmt_down_step>max_unload_trq_step)//限速扭矩下降的步长 > 无负载最大扭矩下降步长 = 3/50000
+					{
+						spd_lmt_down_step = max_unload_trq_step;//限速扭矩下降的步长 = 无负载最大扭矩下降步长 = 3/50000
+					}
+					else if(spd_lmt_down_step<trq_step)//限速扭矩下降的步长 < 最小扭矩下降步长 = 1/50000
+					{
+						spd_lmt_down_step = trq_step;//限速扭矩下降的步长 = 最小扭矩下降步长 = 1/50000
+					}
+					
+					if((spdlmt_trq-spd_lmt_down_step)>tooth_trq)//限速扭矩 - 限速扭矩下降的步长 > 贴齿扭矩
+					{
+						spdlmt_trq = spdlmt_trq-spd_lmt_down_step;//限速扭矩 = 限速扭矩 - 限速扭矩下降的步长
+					}
+					else//限速扭矩 - 限速扭矩下降的步长 < 贴齿扭矩
+					{
+						spdlmt_trq = tooth_trq;//限速扭矩 = 贴齿扭矩
+					}
+				}
+				else if(spdlmt_trq<-tooth_trq)//限速扭矩 < -贴齿扭矩 = -2.048
+				{
+					if(spdlmt_trq>=-trq_lmt)//限速扭矩 >= -扭矩限制 = -0.02
+					{
+						x_value = _IQabs(spdlmt_trq); //限速扭矩的绝对值
+						x_value = -_IQmpy(_IQ(31.25),x_value)+_IQ(0.625); // 0.625-(限速扭矩的绝对值*31.25)
+						spd_lmt_up_step = -_IQmpy(_IQ(0.00008),x_value)+_IQmpy(_IQ(0.03),SysBase.invtorque); //限速扭矩下降的步长
+					}
+					else//限速扭矩 < -扭矩限制 = -0.02
+					{
+						spd_lmt_up_step = max_unload_trq_step; //限速扭矩下降的步长 = 无负载最大扭矩下降步长 = 3/50000
+					}
+					if(spd_lmt_up_step>max_unload_trq_step)//限速扭矩下降的步长 > 无负载最大扭矩下降步长 = 3/50000
+					{
+						spd_lmt_up_step = max_unload_trq_step; //限速扭矩下降的步长 = 无负载最大扭矩下降步长 = 3/50000
+					}
+					else if(spd_lmt_up_step<trq_step)//限速扭矩下降的步长 < 最小扭矩下降步长 = 1/50000
+					{
+						spd_lmt_up_step = trq_step;//限速扭矩下降的步长 = 最小扭矩下降步长 = 1/50000
+					}
+					
+					if((spdlmt_trq+spd_lmt_up_step)<-tooth_trq)//限速扭矩 + 限速扭矩下降的步长 < -贴齿扭矩
+					{
+						spdlmt_trq = spdlmt_trq+spd_lmt_up_step;//限速扭矩 = 限速扭矩 + 限速扭矩下降的步长
+					}
+					else//限速扭矩 + 限速扭矩下降的步长 > -贴齿扭矩
+					{
+						spdlmt_trq = -tooth_trq;//限速扭矩 = -贴齿扭矩
+					}
+				}
+				else// -2.048 = -贴齿扭矩 < 限速扭矩 < 贴齿扭矩 = 2.048
+				{
+					spd_lmt_up_step = trq_step; //限速扭矩下降的步长 = 最小扭矩下降步长 = 1/50000
+					spdlmt_trq = spdlmt_trq+spd_lmt_up_step;//限速扭矩 = 限速扭矩 + 限速扭矩下降的步长
+					if(spdlmt_trq>tooth_trq)//限速扭矩 > 贴齿扭矩
+					{
+						spdlmt_trq = tooth_trq;//限速扭矩 = 贴齿扭矩
+					}
+				}
+
+				if(1 == VCU_IOstate.field.limit_speed_flag)//VCU限速标志为1 = 限速
+				{
+					spdlmt_trq = tooth_trq;//限速扭矩 = 贴齿扭矩
+				}
+
+				if(spdlmt_trq == tooth_trq)//限速扭矩 = 贴齿扭矩
+				{
+					scsw2.field.SpdLmt_state = 1;//scsw2限速状态置为1 正向限速
+					scsw2.field.spdlmt_flag = 0;//scsw2限速标志清零
+					spdlmt_cmd = sysFbkPara.Speed_fbk_Filter+_IQdiv(50,SysBase.speed);//限速控制 = (速度反馈/平均速度) + (50/12000)
+					if(spdlmt_cmd>_IQ15toIQ(speed_lmt))//限速控制 > 速度限制<<9位 = (0.375*512) = 192
+					{
+						spdlmt_cmd = _IQ15toIQ(speed_lmt);//限速控制 = 速度限制<<9位 = (0.375*512) = 192
+					}
+				}
+			}
+			else //反向限速标志
+			{
+				if(spdlmt_trq>tooth_trq)//限速扭矩 > 贴齿扭矩 = 2.048
+				{
+					if(spdlmt_trq<=trq_lmt)//限速扭矩 <= 扭矩限制 = 0.02
+					{
+						x_value = _IQabs(spdlmt_trq);//限速扭矩的绝对值
+						x_value = -_IQmpy(_IQ(62.5),x_value)+_IQ(1.25);// 1.25-(限速扭矩的绝对值*62.5)
+						spd_lmt_down_step = -_IQmpy(_IQ(0.00008),x_value)+_IQmpy(_IQ(0.03),SysBase.invtorque);//限速扭矩下降的步长
+					}
+					else//限速扭矩 > 扭矩限制 = 0.02
+					{
+						spd_lmt_down_step = max_unload_trq_step;//限速扭矩下降的步长 = 无负载最大扭矩下降步长 = 3/50000
+					}
+					if(spd_lmt_down_step>max_unload_trq_step)//限速扭矩下降的步长 > 无负载最大扭矩下降步长 = 3/50000
+					{
+						spd_lmt_down_step = max_unload_trq_step;//限速扭矩下降的步长 = 无负载最大扭矩下降步长 = 3/50000
+					}
+					else if(spd_lmt_down_step<trq_step)//限速扭矩下降的步长 < 最小扭矩下降步长 = 1/50000
+					{
+						spd_lmt_down_step = trq_step;//限速扭矩下降的步长 = 最小扭矩下降步长 = 1/50000
+					}
+					
+					if((spdlmt_trq-spd_lmt_down_step)>tooth_trq)//限速扭矩 - 限速扭矩下降的步长 > 贴齿扭矩
+					{
+						spdlmt_trq = spdlmt_trq-spd_lmt_down_step;//限速扭矩 = 限速扭矩 - 限速扭矩下降的步长
+					}
+					else//限速扭矩 + 限速扭矩下降的步长 > -贴齿扭矩
+					{
+						spdlmt_trq = tooth_trq;//限速扭矩 = 贴齿扭矩
+					}
+				}
+				else if(spdlmt_trq<-tooth_trq)//限速扭矩 < -贴齿扭矩 = -2.048
+				{
+					if(spdlmt_trq>=-trq_lmt)//限速扭矩 >= -扭矩限制 = -0.02
+					{
+						x_value = _IQabs(spdlmt_trq);//限速扭矩的绝对值
+						x_value = -_IQmpy(_IQ(62.5),x_value)+_IQ(1.25);// 1.25-(限速扭矩的绝对值*62.5)
+						spd_lmt_up_step = -_IQmpy(_IQ(0.00036),x_value)+_IQmpy(_IQ(0.19),SysBase.invtorque);//限速扭矩下降的步长
+					}
+					else//限速扭矩 < -扭矩限制 = -0.02
+					{
+						spd_lmt_up_step = _IQmpy(_IQ(0.19),SysBase.invtorque);//限速扭矩下降的步长 = 0.19*1/500 = 19/50000
+					}
+					if(spd_lmt_up_step>_IQmpy(_IQ(0.19),SysBase.invtorque))//限速扭矩下降的步长 > 0.19*1/500 = 19/50000
+					{
+						spd_lmt_up_step = _IQmpy(_IQ(0.19),SysBase.invtorque);//限速扭矩下降的步长 = 0.19*1/500 = 19/50000
+					}
+					else if(spd_lmt_up_step<trq_step)//限速扭矩下降的步长 < 最小扭矩下降步长 = 1/50000
+					{
+						spd_lmt_up_step = trq_step;//限速扭矩下降的步长 = 最小扭矩下降步长 = 1/50000
+					}
+					
+					if((spdlmt_trq+spd_lmt_up_step)<-tooth_trq)//限速扭矩 + 限速扭矩下降的步长 < -贴齿扭矩
+					{
+						spdlmt_trq = spdlmt_trq+spd_lmt_up_step;//限速扭矩 = 限速扭矩 + 限速扭矩下降的步长
+					}
+					else//限速扭矩 + 限速扭矩下降的步长 > -贴齿扭矩
+					{
+						spdlmt_trq = -tooth_trq;//限速扭矩 = -贴齿扭矩
+					}
+				}
+				else
+				{
+					spd_lmt_down_step = trq_step;  //限速扭矩下降的步长 = 最小扭矩下降步长 = 1/50000
+					spdlmt_trq = spdlmt_trq-spd_lmt_down_step;//限速扭矩 = 限速扭矩 - 限速扭矩下降的步长
+					if(spdlmt_trq<-tooth_trq)//限速扭矩<-贴齿扭矩
+					{
+						spdlmt_trq = -tooth_trq;//限速扭矩 = -贴齿扭矩
+					}
+				}
+
+				if(1 == VCU_IOstate.field.limit_speed_flag)//VCU限速标志为1 = 限速
+				{
+					spdlmt_trq = -tooth_trq;//限速扭矩 = -贴齿扭矩
+				}
+
+				if(spdlmt_trq == -tooth_trq)//限速扭矩 = -贴齿扭矩
+				{
+					scsw2.field.SpdLmt_state = 2;//scsw2限速状态置为2 反向限速
+					scsw2.field.spdlmt_flag = 0;//scsw2限速标志清零
+					spdlmt_cmd = sysFbkPara.Speed_fbk_Filter-_IQdiv(50,SysBase.speed);//限速控制 = (速度反馈/平均速度) - (50/12000)
+					if(spdlmt_cmd<_IQ15toIQ(speed_lmt))//限速控制 < 速度限制<<9位 = (0.375*512) = 192
+					{
+						spdlmt_cmd = _IQ15toIQ(speed_lmt);//限速控制 = 速度限制<<9位 = (0.375*512) = 192
+					}
+				}
+			}
+		}
+		
+		if(((0 == scsw2.field.igbt_state)//逆变器关管
+		  ||(MTR_TRQ_LOOP != sccw1.field.runLoop_mode)//不为力矩环
+		  ||(0 == Vehicle_cmd.cmdmode.data.gear_state)) //空档
+		 &&((0 != scsw2.field.SpdLmt_state)||(0 != scsw2.field.spdlmt_flag)))//scsw2为限速状态||scsw2限速标志位置位
+		{
+			sysCfgPara.TrqCmd_AIfilter = sysCfgPara.TrqCmd_AI = trqLoop_trqRampref;//给定力矩 = 当前力矩 = 扭矩指令
+			scsw2.field.SpdLmt_state = 0;//scsw2限速状态清零
+			scsw2.field.spdlmt_flag = 0;//清除scsw2标志位
 		}
 	}
 	else
 	{
-		scsw2.field.SpdLmt_state = 0;
-		scsw2.field.spdlmt_flag = 0;
+		scsw2.field.SpdLmt_state = 0;//scsw2限速状态清零
+		scsw2.field.spdlmt_flag = 0;//清除scsw2标志位
 	}
 }
 

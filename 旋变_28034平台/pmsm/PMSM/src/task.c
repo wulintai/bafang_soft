@@ -427,11 +427,11 @@ void task2msCtrl(void)
 void task5msCtrl(void)//◊Ø
 {
 	task_struct[TASK5MS].task_flag = TASK_CLEAR_FLAG;
-	canatransmit();
-	canareceive();
+	canatransmit();     //can∑¢ÀÕ
+	canareceive();      //canΩ” ’
 }
 
-void taskGetVehicleIoState(void)
+void taskGetVehicleIoState(void)        //∂¡io◊¥Ã¨  Œ‚
 {
 	Uint16 read_vehicle_io_state_index = 0;
 	Uint16 io_state_new_bit_value = 0;
@@ -474,10 +474,10 @@ void taskGetVehicleIoState(void)
 void task10msCtrl(void)
 {
 	task_struct[TASK10MS].task_flag = TASK_CLEAR_FLAG;
-	eeprom_Process();
-	taskGetVehicleIoState();
-	AIFeedback();
-	diagIO();
+	eeprom_Process();       //¿Ó
+	taskGetVehicleIoState();        //Œ‚
+	AIFeedback();        //Œ‚
+	diagIO();        //Œ‚
 	if((1 == EV_MCU_Para.field.Error_rest)
 	 &&(0 == sccw1.field.run_enable))
 	{
