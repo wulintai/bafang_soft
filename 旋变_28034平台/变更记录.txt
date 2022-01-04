@@ -1,0 +1,9 @@
+1，删除faultdetect中的HallDetectProtect函数；
+2，删除trqloop中的trqidqmap和trqLoscoeff函数；
+3，删除mtr_learnexactoffset中的diagexactEncOffsetTuneAct_ctrl函数
+      和diagexactEncOffsetTuneAct_ctrl函数；
+4，删除sysctrlFun中的diff_deal函数；
+5，删除feedback中的ThetaCal_Resolver函数；
+6，删除weakcrtLoop中的weakcrtLoopout函数；
+7，删除mtrfwd中的mtrfwdctrl函数；
+8，删除trqLmt中的trqLmtCtrl函数；

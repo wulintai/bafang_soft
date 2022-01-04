@@ -1,0 +1,163 @@
+#include "DSP2803x_Device.h"
+
+void sub_io_init(void)
+{
+	EALLOW;
+	GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 1;   	// EPWM1A      
+	GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 1;   	// EPWM1B      
+	GpioCtrlRegs.GPAMUX1.bit.GPIO2 = 1;   	// EPWM2A       
+	GpioCtrlRegs.GPAMUX1.bit.GPIO3 = 1;   	// EPWM2B      
+	GpioCtrlRegs.GPAMUX1.bit.GPIO4 = 1;   	// EPWM3A       
+	GpioCtrlRegs.GPAMUX1.bit.GPIO5 = 1;   	// EPWM3B       
+
+	///GpioCtrlRegs.GPAMUX1.bit.GPIO6 = 1;     // EPWM4A  
+    GpioCtrlRegs.GPAPUD.bit.GPIO0 = 1;
+	GpioCtrlRegs.GPAPUD.bit.GPIO1 = 1;
+	GpioCtrlRegs.GPAPUD.bit.GPIO2 = 1;
+	GpioCtrlRegs.GPAPUD.bit.GPIO3 = 1;
+	GpioCtrlRegs.GPAPUD.bit.GPIO4 = 1;
+	GpioCtrlRegs.GPAPUD.bit.GPIO5 = 1;
+	GpioCtrlRegs.GPAPUD.bit.GPIO6 = 1;
+	///GpioCtrlRegs.GPADIR.bit.GPIO6 = 0; //OCH
+	
+	///GpioCtrlRegs.GPADIR.bit.GPIO8 = 0;
+	GpioCtrlRegs.GPAMUX1.bit.GPIO9 = 0;         // GPIO
+   	GpioCtrlRegs.GPADIR.bit.GPIO9 = 0;          // input
+   	GpioCtrlRegs.GPAQSEL1.bit.GPIO9 = 0;        // XINT1 Synch to SYSCLKOUT only
+   	 
+// 	GPIO9 is XINT1
+   	GpioIntRegs.GPIOXINT1SEL.bit.GPIOSEL = 9;   // Xint1 is GPIO9
+   	XIntruptRegs.XINT1CR.bit.POLARITY = 0;      // Falling edge interrupt  
+   	XIntruptRegs.XINT1CR.bit.ENABLE = 1;        // Enable Xint1
+
+	///INV_DRV 暂时没有用
+	GpioCtrlRegs.GPAMUX1.bit.GPIO10 = 0; // DRV_EN
+	GpioCtrlRegs.GPADIR.bit.GPIO10 = 1; // GPIO16 = OUTPUT	
+	GpioCtrlRegs.GPAPUD.bit.GPIO10 = 0; // Enable pullup on GPIO27	 
+	GpioDataRegs.GPASET.bit.GPIO10 = 1;	// Load output latch
+
+    ///BUZZER
+	GpioCtrlRegs.GPAMUX1.bit.GPIO11 = 0; // IO PIN
+	GpioCtrlRegs.GPADIR.bit.GPIO11 = 1;	// GPIO11 = OUTPUT	
+	GpioCtrlRegs.GPAPUD.bit.GPIO11 = 0;	// Enable pullup on GPIO11	 
+	GpioDataRegs.GPACLEAR.bit.GPIO11 = 1;	// Load output latch
+	
+    ///编码器
+	//GpioCtrlRegs.GPAMUX2.bit.GPIO20=1;//QEPA
+	//GpioCtrlRegs.GPAMUX2.bit.GPIO21=1;//QEPB
+	//GpioCtrlRegs.GPAMUX2.bit.GPIO23=1;//QEPZ
+	
+	GpioCtrlRegs.GPAPUD.bit.GPIO20 = 1;   // Enable pull-up on GPIO20 (EQEP1A)
+    GpioCtrlRegs.GPAPUD.bit.GPIO21 = 1;   // Enable pull-up on GPIO21 (EQEP1B)
+    GpioCtrlRegs.GPAPUD.bit.GPIO23 = 1;   // Enable pull-up on GPIO21 (EQEP1B)
+	//IO下拉
+	GpioCtrlRegs.GPAPUD.bit.GPIO22 = 1;   //刹车
+
+
+	//==============仪表=========================== 
+	GpioCtrlRegs.GPAMUX2.bit.GPIO24 = 0;	// IO PIN
+	GpioCtrlRegs.GPADIR.bit.GPIO24 = 1;	// GPIO16 = OUTPUT	
+	GpioCtrlRegs.GPAPUD.bit.GPIO24 = 0;	// Enable pullup on GPIO27	 
+	GpioDataRegs.GPASET.bit.GPIO24 = 1;	// Load output latch 
+	
+	GpioCtrlRegs.GPAPUD.bit.GPIO27 = 1;   //高低速模式
+
+	
+
+	GpioCtrlRegs.GPAMUX2.bit.GPIO28 = 1;//SCI
+	//GpioCtrlRegs.GPAMUX2.bit.GPIO29 = 1;
+	GpioCtrlRegs.GPAMUX2.bit.GPIO29 = 0; // IO PIN
+	GpioCtrlRegs.GPADIR.bit.GPIO29 = 1;	// GPIO29 = OUTPUT	
+	GpioCtrlRegs.GPAPUD.bit.GPIO29 = 0;	// Enable pullup on GPIO27	 
+	GpioDataRegs.GPASET.bit.GPIO29 = 1;	// Load output latch
+
+	GpioCtrlRegs.GPAMUX2.bit.GPIO30 = 1;//CANA
+	GpioCtrlRegs.GPAMUX2.bit.GPIO31 = 1;
+
+	GpioCtrlRegs.GPBMUX1.bit.GPIO32 = 1;//I2C
+	GpioCtrlRegs.GPBMUX1.bit.GPIO33 = 1;
+
+	//GpioCtrlRegs.AIOMUX1.bit.AIO10 = 2;///UVW
+    //GpioCtrlRegs.AIOMUX1.bit.AIO12 = 2;
+ 	//GpioCtrlRegs.AIOMUX1.bit.AIO14  = 2;
+
+	//GpioCtrlRegs.AIOMUX1.bit.AIO2 = 2;
+	
+	GpioCtrlRegs.GPBMUX1.bit.GPIO35 = 1;   // Configure GPIO35 for TDI
+	GpioCtrlRegs.GPBMUX1.bit.GPIO36 = 1;   // Configure GPIO36 for TMS	
+	GpioCtrlRegs.GPBMUX1.bit.GPIO37 = 1;   // Configure GPIO37 for TDO
+	GpioCtrlRegs.GPBMUX1.bit.GPIO38 = 1;   // Configure GPIO38 for TCK	
+
+    //==============继电器控制=========================== 
+	GpioCtrlRegs.GPBMUX1.bit.GPIO40 = 0; // IO PIN
+	GpioCtrlRegs.GPBDIR.bit.GPIO40 = 1;	// GPIO16 = OUTPUT	
+	GpioCtrlRegs.GPBPUD.bit.GPIO40 = 0;	// Enable pullup on GPIO27	 
+	GpioDataRegs.GPBSET.bit.GPIO40 = 1;	// Load output latch
+	///DI1加速器开关
+	GpioCtrlRegs.AIODIR.bit.AIO2= 0;	   // AIO2  INTPUT
+	GpioCtrlRegs.AIOMUX1.bit.AIO2 = 0;   // Configure AIO2 for IO Input
+
+	///DI2三速1
+	GpioCtrlRegs.AIODIR.bit.AIO4= 0;	   // AIO4  INTPUT
+	GpioCtrlRegs.AIOMUX1.bit.AIO4 = 0;   // Configure AIO4 for IO Input
+
+	///DI3三速2
+	GpioCtrlRegs.AIODIR.bit.AIO6= 0;	   // AIO6  INTPUT
+	GpioCtrlRegs.AIOMUX1.bit.AIO6 = 0;	 // Configure AIO6 for IO Input
+
+	///DI4巡航
+	GpioCtrlRegs.AIODIR.bit.AIO10= 0;	   // AIO10  INTPUT
+	GpioCtrlRegs.AIOMUX1.bit.AIO10 = 0;   // Configure AIO10 for IO Input
+
+	///DI5后退
+	GpioCtrlRegs.AIODIR.bit.AIO12= 0;	   // AIO12  INTPUT
+	GpioCtrlRegs.AIOMUX1.bit.AIO12 = 0;   // Configure AIO12 for IO Input
+
+    ///DI6前进
+	GpioCtrlRegs.AIODIR.bit.AIO14= 0;	   // AIO14  INTPUT
+	GpioCtrlRegs.AIOMUX1.bit.AIO14 = 0;   // Configure AIO14 for IO Input
+
+	//XINT1 		
+	GpioCtrlRegs.GPAMUX2.bit.GPIO20 = 0;		// GPIO
+	GpioCtrlRegs.GPADIR.bit.GPIO20 = 0; 		// input
+	GpioCtrlRegs.GPAQSEL2.bit.GPIO20 = 0;		// XINT1 Synch to SYSCLKOUT only
+	//	GPIO20 is XINT1
+	GpioIntRegs.GPIOXINT1SEL.bit.GPIOSEL = 20;	// Xint1 is GPIO20
+	//	Configure XINT1
+	XIntruptRegs.XINT1CR.bit.POLARITY = 3;		// Falling edge interrupt
+	//	Enable XINT1	 
+	XIntruptRegs.XINT1CR.bit.ENABLE = 1;		// Enable Xint1
+	//=========================================
+
+	//XINT2 		
+	GpioCtrlRegs.GPAMUX2.bit.GPIO21 = 0;		// GPIO
+	GpioCtrlRegs.GPADIR.bit.GPIO21 = 0; 		// input
+	GpioCtrlRegs.GPAQSEL2.bit.GPIO21 = 0;		// XINT2 Synch to SYSCLKOUT only
+	//	GPIO21 is XINT1
+	GpioIntRegs.GPIOXINT2SEL.bit.GPIOSEL = 21;	// Xint2 is GPIO21
+	//	Configure XINT1
+	XIntruptRegs.XINT2CR.bit.POLARITY = 3;		// Falling edge interrupt
+	//	Enable XINT1	 
+	XIntruptRegs.XINT2CR.bit.ENABLE = 1;		// Enable Xint2
+	//=========================================
+
+	//XINT3 		
+	GpioCtrlRegs.GPAMUX2.bit.GPIO23 = 0;		// GPIO
+	GpioCtrlRegs.GPADIR.bit.GPIO23 = 0; 		// input
+	GpioCtrlRegs.GPAQSEL2.bit.GPIO23 = 0;		// XINT1 Synch to SYSCLKOUT only
+	//	GPIO23 is XINT1
+	GpioIntRegs.GPIOXINT2SEL.bit.GPIOSEL = 23;	// Xint3 is GPIO23
+	//	Configure XINT1
+	XIntruptRegs.XINT3CR.bit.POLARITY = 3;		// Falling edge interrupt
+	//	Enable XINT1	 
+	XIntruptRegs.XINT3CR.bit.ENABLE = 1;		// Enable Xint3
+	//=========================================	
+
+ 	EDIS;
+}
+
+//===============================================================
+
+
+
+
