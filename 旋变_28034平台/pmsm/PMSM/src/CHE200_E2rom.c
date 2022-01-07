@@ -106,7 +106,7 @@ void	EEPROM_WRITE_WORD(Uint16 address,Uint16 data)
 		if(para_temp1==0)
 		{
 			//;--->>---D??|¨¬???¡è?¨¢??¡§2
-			para_temp0=address>>7;	
+			para_temp0=address>>7;
 			EEPROM_WRITE_BYTE(para_temp0&0xff);	//;Write Address to EEPROM
 			
 			para_temp0=((address<<1)&0xfe);	

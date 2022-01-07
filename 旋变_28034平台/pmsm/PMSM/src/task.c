@@ -441,13 +441,14 @@ void taskGetVehicleIoState(void)        //读io状态  吴
 	vehicle_io_state_new.data.DI1_WAKEUP_DSP   = GpioDataRegs.GPADAT.bit.GPIO25;  //钥匙开关输入
 	vehicle_io_state_new.data.DI2_BRRAK_DSP    = GpioDataRegs.GPADAT.bit.GPIO26;  //刹车输入
 	vehicle_io_state_new.data.DI3_DSP          = GpioDataRegs.GPADAT.bit.GPIO14;  //数字输入
-	vehicle_io_state_new.data.DI4_DSP          = GpioDataRegs.AIODAT.bit.AIO14;   //数字输入
-	vehicle_io_state_new.data.DI5_DSP          = GpioDataRegs.AIODAT.bit.AIO12;   //数字输入
+	vehicle_io_state_new.data.DI4_DSP          = GpioDataRegs.AIODAT.bit.AIO14;   //数字输入 D档
+	vehicle_io_state_new.data.DI5_DSP          = GpioDataRegs.AIODAT.bit.AIO12;   //数字输入 R档
 	vehicle_io_state_new.data.DI6_DSP          = GpioDataRegs.GPADAT.bit.GPIO22;  //数字输入
 	vehicle_io_state_new.data.DI7_DSP          = GpioDataRegs.GPADAT.bit.GPIO28;  //数字输入
 	vehicle_io_state_new.data.DI8_DSP          = GpioDataRegs.GPADAT.bit.GPIO27;  //数字输入
 	vehicle_io_state_new.data.LOT              = GpioDataRegs.GPBDAT.bit.GPIO42;
 	vehicle_io_state_new.data.DOS              = GpioDataRegs.GPBDAT.bit.GPIO43;
+	//数字信号滤波
 	for(read_vehicle_io_state_index=0;read_vehicle_io_state_index<8;read_vehicle_io_state_index++)
 	{
 		io_state_new_bit_value = ((vehicle_io_state_new.wValue>>read_vehicle_io_state_index)&0x0001);
@@ -464,11 +465,11 @@ void taskGetVehicleIoState(void)        //读io状态  吴
 		if(vehicle_io_state_count[read_vehicle_io_state_index]>5)
 		{
 			vehicle_io_state_count[read_vehicle_io_state_index] = 0;
-			vehicle_io_state_old.wValue = vehicle_io_state_old.wValue&(0xFFFF-(1<<read_vehicle_io_state_index));
-			vehicle_io_state_old.wValue = vehicle_io_state_old.wValue|(io_state_new_bit_value<<read_vehicle_io_state_index);
+			vehicle_io_state_old.wValue = vehicle_io_state_old.wValue&(0xFFFF-(1<<read_vehicle_io_state_index)); //清除旧值
+			vehicle_io_state_old.wValue = vehicle_io_state_old.wValue|(io_state_new_bit_value<<read_vehicle_io_state_index);//赋新值
 		}
 	}
-	vehicle_io_state.wValue = vehicle_io_state_old.wValue;
+	vehicle_io_state.wValue = vehicle_io_state_old.wValue;//更新当前状态
 }
 
 void task10msCtrl(void)

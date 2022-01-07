@@ -39,30 +39,30 @@ void diagIO(void)
 	_iq max_rev_down_step = 0;
 	_iq max_rev_up_step = 0;
 
-	if(TRQCMD_SOURCE_AI == EV_MCU_Para.field.TrqCmd_SourceType)
+	if(TRQCMD_SOURCE_AI == EV_MCU_Para.field.TrqCmd_SourceType)  //力矩命令来源 = 0 AI1
 	{
-		speed = sysFbkPara.Speed;
-		tooth_trq = _IQ15toIQ(EV_MCU_Para.field.Tooth_trq);
+		speed = sysFbkPara.Speed;  //当前转速
+		tooth_trq = _IQ15toIQ(EV_MCU_Para.field.Tooth_trq);  //贴齿力矩（最大贴齿力矩 2/500）<< 9位 = 2.048
 		//pre_trq_value = _IQmpy(_IQ(0.5),SysBase.invtorque);
-		trq_lmt = _IQmpyI32(10,SysBase.invtorque);
-		trq_step = _IQmpy(_IQ(0.01),SysBase.invtorque);
-		trq_step_second = _IQmpy(_IQ(0.02125),SysBase.invtorque);
-		trq_step_third = _IQmpy(_IQ(0.025),SysBase.invtorque);
+		trq_lmt = _IQmpyI32(10,SysBase.invtorque);  // 1/50 = 0.02
+		trq_step = _IQmpy(_IQ(0.01),SysBase.invtorque);  // 1/50000    最小步长
+		trq_step_second = _IQmpy(_IQ(0.02125),SysBase.invtorque);  // 0.0000425
+		trq_step_third = _IQmpy(_IQ(0.025),SysBase.invtorque);  // 1/20000 = 0.00005
 		//trq_gear_step = _IQmpy(_IQ(0.015),SysBase.invtorque);
-		tooth_trq_step = _IQmpy(_IQ(0.2),SysBase.invtorque);
-		max_fwd_up_step = _IQmpy(_IQ(0.5),SysBase.invtorque);
-		max_fwd_down_step = _IQmpy(_IQ(1.05),SysBase.invtorque);
-		max_feedback_up_step = _IQmpy(_IQ(3.5),SysBase.invtorque);
-		max_feedback_down_step = _IQmpy(_IQ(0.1),SysBase.invtorque);
-		min_feedback_up_step = _IQmpy(_IQ(0.05),SysBase.invtorque);
-		min_feedback_down_step = _IQmpy(_IQ(0.05),SysBase.invtorque);
-		max_feedback_enter_down_step = _IQmpy(_IQ(3.5),SysBase.invtorque);
-		gear_n_step = _IQmpy(_IQ(0.5),SysBase.invtorque);
-		max_rev_down_step = _IQmpy(_IQ(0.25),SysBase.invtorque);
-		max_rev_up_step = _IQmpy(_IQ(1.5),SysBase.invtorque);
-		trq_n_step_updown = _IQmpy(_IQ(0.1),SysBase.invtorque);
+		tooth_trq_step = _IQmpy(_IQ(0.2),SysBase.invtorque); // 1/2500
+		max_fwd_up_step = _IQmpy(_IQ(0.5),SysBase.invtorque);  // 1/1000
+		max_fwd_down_step = _IQmpy(_IQ(1.05),SysBase.invtorque);  // 1.05/500
+		max_feedback_up_step = _IQmpy(_IQ(3.5),SysBase.invtorque); // 3.5/500
+		max_feedback_down_step = _IQmpy(_IQ(0.1),SysBase.invtorque);  // 0.1/500
+		min_feedback_up_step = _IQmpy(_IQ(0.05),SysBase.invtorque);   // 0.05/500
+		min_feedback_down_step = _IQmpy(_IQ(0.05),SysBase.invtorque);  // 0.05/500
+		max_feedback_enter_down_step = _IQmpy(_IQ(3.5),SysBase.invtorque);  // 3.5/500
+		gear_n_step = _IQmpy(_IQ(0.5),SysBase.invtorque); // 0.5/500
+		max_rev_down_step = _IQmpy(_IQ(0.25),SysBase.invtorque);  // 0.25/500
+		max_rev_up_step = _IQmpy(_IQ(1.5),SysBase.invtorque);  // 1.5/500
+		trq_n_step_updown = _IQmpy(_IQ(0.1),SysBase.invtorque);  // 0.1/500
 		
-		sccw1.field.runLoop_mode = MTR_TRQ_LOOP;
+		sccw1.field.runLoop_mode = MTR_TRQ_LOOP;  //运行模式设为力矩环
 
 		//刹车信号采集
 		if(1 == vehicle_io_state.data.DI2_BRRAK_DSP)
@@ -75,7 +75,7 @@ void diagIO(void)
 		}
 
 		//档位信号采集
-		if((1 == vehicle_io_state.data.DI4_DSP)
+		if((1 == vehicle_io_state.data.DI4_DSP)//？
 		 &&(0 == vehicle_io_state.data.DI5_DSP))
 		{
 			VCU_IOstate.field.In_fwdrev_new = 1;//D档
@@ -95,16 +95,16 @@ void diagIO(void)
 		{
 			if(1 == VCU_IOstate.field.In_fwdrev_new)//前进档
 			{
-				if(((0 == VCU_IOstate.field.In_fwdrev)||(2 == VCU_IOstate.field.In_fwdrev))
+				if(((0 == VCU_IOstate.field.In_fwdrev)||(2 == VCU_IOstate.field.In_fwdrev))  //速度<50 && 非前进状态
 				 &&(speed<50))
 				{
-					Vehicle_cmd.cmdmode.data.gear_swap_trq_flag = 1;
+					Vehicle_cmd.cmdmode.data.gear_swap_trq_flag = 1;   //  制动状态
 				}
-				VCU_IOstate.field.In_fwdrev = VCU_IOstate.field.In_fwdrev_new;
-				Vehicle_cmd.cmdmode.data.gear_swap_zero_flag = 1;
+				VCU_IOstate.field.In_fwdrev = VCU_IOstate.field.In_fwdrev_new;  //更新档位值
+				Vehicle_cmd.cmdmode.data.gear_swap_zero_flag = 1;  //  有手刹
 				if(speed<0)
 				{
-					zero_speed_throad = 50-speed;
+					zero_speed_throad = 50-speed;   //设置驻坡速度
 				}
 				else if(speed<50)
 				{
@@ -117,16 +117,16 @@ void diagIO(void)
 			}
 			else if(2 == VCU_IOstate.field.In_fwdrev_new)//后退档
 			{
-				if(((0 == VCU_IOstate.field.In_fwdrev)||(1 == VCU_IOstate.field.In_fwdrev))
+				if(((0 == VCU_IOstate.field.In_fwdrev)||(1 == VCU_IOstate.field.In_fwdrev))  //速度>-50 && 非后退状态
 				 &&(speed>-50))
 				{
-					Vehicle_cmd.cmdmode.data.gear_swap_trq_flag = 1;
+					Vehicle_cmd.cmdmode.data.gear_swap_trq_flag = 1;  //  制动状态
 				}
-				VCU_IOstate.field.In_fwdrev = VCU_IOstate.field.In_fwdrev_new;
-				Vehicle_cmd.cmdmode.data.gear_swap_zero_flag = 1;
+				VCU_IOstate.field.In_fwdrev = VCU_IOstate.field.In_fwdrev_new;   //更新档位值
+				Vehicle_cmd.cmdmode.data.gear_swap_zero_flag = 1;  //  有手刹
 				if(speed>0)
 				{
-					zero_speed_throad = 50+speed;
+					zero_speed_throad = 50+speed;  //驻坡速度
 				}
 				else if(speed>-50)
 				{
@@ -139,11 +139,11 @@ void diagIO(void)
 			}
 			else//空档
 			{
-				VCU_IOstate.field.In_fwdrev = VCU_IOstate.field.In_fwdrev_new;
+				VCU_IOstate.field.In_fwdrev = VCU_IOstate.field.In_fwdrev_new;  //更新档位值
 			}
 		}
 
-		switch(VCU_IOstate.field.In_fwdrev)
+		switch(VCU_IOstate.field.In_fwdrev)  //更新档位值
 		{
 			case 1:
 				Vehicle_cmd.cmdmode.data.gear_state = 1;
@@ -157,81 +157,81 @@ void diagIO(void)
 		}
 
 		//判断滑行回馈
-		if(0 == Vehicle_cmd.cmdmode.data.slip_feedback_flag)
+		if(0 == Vehicle_cmd.cmdmode.data.slip_feedback_flag)  //滑行反馈标志 = 0 不复位
 		{
-			if((0 == Vehicle_cmd.cmdmode.data.brake_state)
-			 &&(speed>=500)
-			 &&(canarev_cmd.soc_ref<95)
-			 &&(1 == Vehicle_cmd.cmdmode.data.gear_state)
-			 &&(0 == Vehicle_cmd.torque_ref)
-			 &&(sysCfgPara.TrqCmd_AI<=tooth_trq)
+			if((0 == Vehicle_cmd.cmdmode.data.brake_state)  //无刹车信号
+			 &&(speed>=500)  //速度>500
+			 &&(canarev_cmd.soc_ref<95)  // 剩余电量<95%  通过CAN传输
+			 &&(1 == Vehicle_cmd.cmdmode.data.gear_state)  // 前进状态    0:空挡        1：前进        2：后退
+			 &&(0 == Vehicle_cmd.torque_ref)  //无输出力矩
+			 &&(sysCfgPara.TrqCmd_AI<=tooth_trq)  //   AI力矩命令值  <=  贴齿力矩
 			 )
 			{
-				Vehicle_cmd.cmdmode.data.slip_feedback_flag = 0;
+				Vehicle_cmd.cmdmode.data.slip_feedback_flag = 0; //滑行反馈标志 = 0 不复位  非滑行状态     此处应为1
 			}
 		}
 		else
 		{
-			if((1 == Vehicle_cmd.cmdmode.data.brake_state)
-			 ||(speed<450)
-			 ||(canarev_cmd.soc_ref>96)
-			 ||(1 != Vehicle_cmd.cmdmode.data.gear_state)
-			 ||(0 != Vehicle_cmd.torque_ref))
+			if((1 == Vehicle_cmd.cmdmode.data.brake_state) //有刹车信号
+			 ||(speed<450) //速度<450
+			 ||(canarev_cmd.soc_ref>96)  //剩余电量>96%  通过CAN传输
+			 ||(1 != Vehicle_cmd.cmdmode.data.gear_state) //不是前进状态
+			 ||(0 != Vehicle_cmd.torque_ref))  //输出力矩不为0
 			{
-				Vehicle_cmd.cmdmode.data.slip_feedback_flag = 0;
+				Vehicle_cmd.cmdmode.data.slip_feedback_flag = 0; //滑行反馈标志 = 0 不复位  非滑行状态
 			}
 		}
 		
 		//判断制动回馈
-		if(0 == Vehicle_cmd.cmdmode.data.brake_feedback_flag)
+		if(0 == Vehicle_cmd.cmdmode.data.brake_feedback_flag)  //制动时无强断电
 		{
-			if((1 == Vehicle_cmd.cmdmode.data.brake_state)
-			 &&(speed>=500)
-			 &&(canarev_cmd.soc_ref<95)
-			 &&(1 == Vehicle_cmd.cmdmode.data.gear_state)
-			 &&(0 == Vehicle_cmd.torque_ref)
-			 &&(sysCfgPara.TrqCmd_AI<=tooth_trq))
+			if((1 == Vehicle_cmd.cmdmode.data.brake_state) //刹车信号
+			 &&(speed>=500) //速度>500
+			 &&(canarev_cmd.soc_ref<95) // 剩余电量<95%  通过CAN传输
+			 &&(1 == Vehicle_cmd.cmdmode.data.gear_state) // 前进状态    0:空挡        1：前进        2：后退
+			 &&(0 == Vehicle_cmd.torque_ref) //无输出力矩
+			 &&(sysCfgPara.TrqCmd_AI<=tooth_trq)) //   ？？ <=  贴齿力矩
 			{
-				Vehicle_cmd.cmdmode.data.brake_feedback_flag = 0;
+				Vehicle_cmd.cmdmode.data.brake_feedback_flag = 0; //刹车反馈标志 = 0 制动时无强断电
 			}
 		}
 		else
 		{
-			if((0 == Vehicle_cmd.cmdmode.data.brake_state)
-			 ||(speed<450)
-			 ||(canarev_cmd.soc_ref>96)
-			 ||(1 != Vehicle_cmd.cmdmode.data.gear_state)
-			 ||(0 != Vehicle_cmd.torque_ref))
+			if((0 == Vehicle_cmd.cmdmode.data.brake_state)  //无刹车信号
+			 ||(speed<450) //速度<450
+			 ||(canarev_cmd.soc_ref>96)  //剩余电量>96%  通过CAN传输
+			 ||(1 != Vehicle_cmd.cmdmode.data.gear_state)  //不是前进状态
+			 ||(0 != Vehicle_cmd.torque_ref))  //输出力矩不为0
 			{
-				Vehicle_cmd.cmdmode.data.brake_feedback_flag = 0;
+				Vehicle_cmd.cmdmode.data.brake_feedback_flag = 0;  //刹车反馈标志 = 0 制动时无强断电
 			}
 		}
 		
-		//开关管指令
-		if((0 != Vehicle_cmd.cmdmode.data.gear_state)
-		 &&(0 == scsw2.field.fault_flag)
-		 &&(1 == canarev_cmd.cmdmode2.data.main_relay_state)
-		 &&(0 == canarev_cmd.cmdmode2.data.charge_relay_state)
-		 &&(0 == canarev_cmd.cmdmode2.data.charge_state)
-		 &&(0 == canarev_cmd.cmdmode2.data.charge_line_state)
-		 &&(1 == canarev_cmd.cmdmode2.data.BMS_self_state))
+		//逆变器开关管指令
+		if((0 != Vehicle_cmd.cmdmode.data.gear_state)  //非空挡
+		 &&(0 == scsw2.field.fault_flag)  //无故障
+		 &&(1 == canarev_cmd.cmdmode2.data.main_relay_state)  //总继电器状态打开
+		 &&(0 == canarev_cmd.cmdmode2.data.charge_relay_state)  //充电继电器关闭
+		 &&(0 == canarev_cmd.cmdmode2.data.charge_state)  //非充电状态
+		 &&(0 == canarev_cmd.cmdmode2.data.charge_line_state)  //充电线状态为0
+		 &&(1 == canarev_cmd.cmdmode2.data.BMS_self_state)) //BMS自检正常
 		{
-			sccw1.field.run_enable              = 1;//开管
-			motor_turn_off_cnt = 0;
+			sccw1.field.run_enable              = 1;//逆变器开管
+			motor_turn_off_cnt = 0;      //计数清零
 		}
 		else
 		{
-			if((0 == Vehicle_cmd.cmdmode.data.gear_state)
-			 &&(_IQabs(speed) < 100)
-			 &&(0 == zero_station_trqCmd)
-			 &&(0 == diff_trq_filter)
-			 &&(0 == sysCfgPara.TrqCmd_AI))
+			if((0 == Vehicle_cmd.cmdmode.data.gear_state)  //空挡
+			 &&(_IQabs(speed) < 100)  //速度的绝对值<100
+			 &&(0 == zero_station_trqCmd)  //非驻坡
+			 &&(0 == diff_trq_filter)  //未用到
+			 &&(0 == sysCfgPara.TrqCmd_AI))  //AI力矩命令值 = 0
 			{
 				motor_turn_off_cnt++;
-				if(motor_turn_off_cnt>400)
+				if(motor_turn_off_cnt>400)  //4s
 				{
 					motor_turn_off_cnt = 400;
-					sccw1.field.run_enable = 0;
+					sccw1.field.run_enable = 0;  //逆变器关管
 				}
 			}
 			else
@@ -245,49 +245,49 @@ void diagIO(void)
 		{
 			if(1 == Vehicle_cmd.cmdmode.data.gear_state)//前进档
 			{
-				if(1 == Vehicle_cmd.cmdmode.data.slip_feedback_flag)//滑行回馈
+				if(1 == Vehicle_cmd.cmdmode.data.slip_feedback_flag)//滑行回馈  处于滑行状态
 				{
-					if(speed>=3000)//15kw回馈功率
+					if(speed>=3000)//15kw回馈功率        根据转速确定反馈功率
 					{
-						trq = 143250/speed;
-						sysCfgPara.TrqCmd_NEW = 0-_IQmpyI32(trq,SysBase.invtorque);
+						trq = 143250/speed;  //计算力矩
+						sysCfgPara.TrqCmd_NEW = 0-_IQmpyI32(trq,SysBase.invtorque);  //力矩命令值
 					}
 					else if(speed>=1500)//47N.m--->10N.m
 					{
-						trq = _IQmpyI32(37,SysBase.invtorque);
-						k_tmp = _IQdiv(trq,_IQmpyI32(1500,SysBase.invspeed));
+						trq = _IQmpyI32(37,SysBase.invtorque);  //  37/500
+						k_tmp = _IQdiv(trq,_IQmpyI32(1500,SysBase.invspeed));  //    1500/12000
 						k_tmp = _IQmpy(_IQmpyI32((speed-1500),SysBase.invspeed),k_tmp);
 						trq = _IQmpyI32(10,SysBase.invtorque)+k_tmp;
-						sysCfgPara.TrqCmd_NEW = 0-trq;
+						sysCfgPara.TrqCmd_NEW = 0-trq;  //力矩命令值
 					}
 					else if(speed>=500)//10N.m--->0N.m
 					{
 						trq = _IQmpyI32(10,SysBase.invtorque);
 						k_tmp = _IQdiv(trq,_IQmpyI32(1000,SysBase.invspeed));
 						k_tmp = _IQmpy(_IQmpyI32((speed-500),SysBase.invspeed),k_tmp);
-						sysCfgPara.TrqCmd_NEW = 0-k_tmp;
+						sysCfgPara.TrqCmd_NEW = 0-k_tmp;  //力矩命令值
 					}
 					else
 					{
 						sysCfgPara.TrqCmd_NEW = 0;
 					}
-					if(sysCfgPara.TrqCmd_NEW<-trqLoopPara.Max_TorqueGen)
+					if(sysCfgPara.TrqCmd_NEW<-trqLoopPara.Max_TorqueGen)   //力矩命令值 < -发电峰值力矩
 					{
-						sysCfgPara.TrqCmd_NEW = -trqLoopPara.Max_TorqueGen;
+						sysCfgPara.TrqCmd_NEW = -trqLoopPara.Max_TorqueGen;  //力矩命令值 = -发电峰值力矩
 					}
 				}
-				else if(1 == Vehicle_cmd.cmdmode.data.brake_feedback_flag)//制动回馈
+				else if(1 == Vehicle_cmd.cmdmode.data.brake_feedback_flag)// 制动回馈
 				{
 					if(speed>=3000)//15kw回馈功率
 					{
 						trq = 143250/speed;
-						sysCfgPara.TrqCmd_NEW = 0-_IQmpyI32(trq,SysBase.invtorque);
+						sysCfgPara.TrqCmd_NEW = 0-_IQmpyI32(trq,SysBase.invtorque);  //力矩命令值
 					}
 					else if(speed>=1500)//47N.m--->10N.m
 					{
 						trq = _IQmpyI32(37,SysBase.invtorque);
 						k_tmp = _IQdiv(trq,_IQmpyI32(1500,SysBase.invspeed));
-						k_tmp = _IQmpy(_IQmpyI32((speed-1500),SysBase.invspeed),k_tmp);
+						k_tmp = _IQmpy(_IQmpyI32((speed-1500),SysBase.invspeed),k_tmp);  //力矩命令值
 						trq = _IQmpyI32(10,SysBase.invtorque)+k_tmp;
 						sysCfgPara.TrqCmd_NEW = 0-trq;
 					}
@@ -296,88 +296,88 @@ void diagIO(void)
 						trq = _IQmpyI32(10,SysBase.invtorque);
 						k_tmp = _IQdiv(trq,_IQmpyI32(1000,SysBase.invspeed));
 						k_tmp = _IQmpy(_IQmpyI32((speed-500),SysBase.invspeed),k_tmp);
-						sysCfgPara.TrqCmd_NEW = 0-k_tmp;
+						sysCfgPara.TrqCmd_NEW = 0-k_tmp;  //力矩命令值
 					}
 					else
 					{
 						sysCfgPara.TrqCmd_NEW = 0;
 					}
-					if(sysCfgPara.TrqCmd_NEW<-trqLoopPara.Max_TorqueGen)
+					if(sysCfgPara.TrqCmd_NEW<-trqLoopPara.Max_TorqueGen)  //力矩命令值 < -发电峰值力矩
 					{
-						sysCfgPara.TrqCmd_NEW = -trqLoopPara.Max_TorqueGen;
+						sysCfgPara.TrqCmd_NEW = -trqLoopPara.Max_TorqueGen;  //力矩命令值 = -发电峰值力矩
 					}
 				}
 				else if(Vehicle_cmd.torque_ref>=0)//前进驱动
 				{
 					if(1 == Vehicle_cmd.cmdmode.data.brake_state)//有刹车信号
 					{
-						if(1 == Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)
+						if(1 == Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)  //制动状态  0:驱动，    1：制动
 						{
-							sysCfgPara.TrqCmd_NEW = 0;
+							sysCfgPara.TrqCmd_NEW = 0;  //力矩命令值 = 0
 						}
 						else
 						{
-							sysCfgPara.TrqCmd_NEW = tooth_trq;
+							sysCfgPara.TrqCmd_NEW = tooth_trq;  //力矩命令值 = 贴齿力矩
 						}
 					}
 					else
 					{
-						if(3 == VCU_IOstate.field.exit_zero_add_trq_flag)
+						if(3 == VCU_IOstate.field.exit_zero_add_trq_flag)  // 未驻坡
 						{
-							sysCfgPara.TrqCmd_NEW = _IQ15toIQ(Vehicle_cmd.torque_ref)+zero_station_trqCmd_store;
+							sysCfgPara.TrqCmd_NEW = _IQ15toIQ(Vehicle_cmd.torque_ref)+zero_station_trqCmd_store; // 力矩命令值 = 前进力矩 + 驻坡力矩
 						}
-						else
+						else  //驻坡
 						{
-							sysCfgPara.TrqCmd_NEW = _IQ15toIQ(Vehicle_cmd.torque_ref);
+							sysCfgPara.TrqCmd_NEW = _IQ15toIQ(Vehicle_cmd.torque_ref); // 力矩命令值 = 前进力矩
 						}
-						if(1 != Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)
+						if(1 != Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)  //驱动状态
 						{
-							if(sysCfgPara.TrqCmd_NEW<=tooth_trq)
+							if(sysCfgPara.TrqCmd_NEW<=tooth_trq)  // 力矩命令值 < 贴齿力矩
 							{
-								sysCfgPara.TrqCmd_NEW = tooth_trq;
+								sysCfgPara.TrqCmd_NEW = tooth_trq;  // 力矩命令值 = 贴齿力矩
 							}
 						}
 					}
-					if(sysCfgPara.TrqCmd_NEW>trqLoopPara.Max_TorqueEle)
+					if(sysCfgPara.TrqCmd_NEW>trqLoopPara.Max_TorqueEle)    // 力矩命令值 > 最大驱动力矩
 					{
-						sysCfgPara.TrqCmd_NEW = trqLoopPara.Max_TorqueEle;
+						sysCfgPara.TrqCmd_NEW = trqLoopPara.Max_TorqueEle; // 力矩命令值 = 最大驱动力矩
 					}
 				}
-				else
+				else  //其他情况
 				{   
 					sysCfgPara.TrqCmd_NEW = 0;
 				}
 			}
 			else if(2 == Vehicle_cmd.cmdmode.data.gear_state)//后退档
 			{
-				if(1 == Vehicle_cmd.cmdmode.data.brake_state) //刹车
+				if(1 == Vehicle_cmd.cmdmode.data.brake_state) // 有刹车信号
 				{
-					if(1 == Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)
+					if(1 == Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)  //制动状态
 					{
-						sysCfgPara.TrqCmd_NEW = 0;
+						sysCfgPara.TrqCmd_NEW = 0;  //  力矩控制值为0
 					}
 					else
 					{
-						sysCfgPara.TrqCmd_NEW = -tooth_trq;
+						sysCfgPara.TrqCmd_NEW = -tooth_trq;  //  力矩控制值 = -贴齿力矩
 					}
 				}
-				else
+				else  //无刹车信号
 				{
-					if(Vehicle_cmd.torque_ref>=0)
+					if(Vehicle_cmd.torque_ref>=0)  //前进驱动
 					{
-						if(3 == VCU_IOstate.field.exit_zero_add_trq_flag)
+						if(3 == VCU_IOstate.field.exit_zero_add_trq_flag)  //  未驻坡状态
 						{
-							sysCfgPara.TrqCmd_NEW = 0-_IQ15toIQ(Vehicle_cmd.torque_ref)+zero_station_trqCmd_store;
+							sysCfgPara.TrqCmd_NEW = 0-_IQ15toIQ(Vehicle_cmd.torque_ref)+zero_station_trqCmd_store;  // 力矩命令值 = -前进力矩 + 驻坡力矩
 						}
-						else
+						else  //驻坡
 						{
-							sysCfgPara.TrqCmd_NEW = 0-_IQ15toIQ(Vehicle_cmd.torque_ref);
+							sysCfgPara.TrqCmd_NEW = 0-_IQ15toIQ(Vehicle_cmd.torque_ref);  // 力矩命令值 = -前进力矩
 						}
-						if(1 != Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)
+						if(1 != Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)  //驱动状态
 						{
-							if(sysCfgPara.TrqCmd_NEW>=(-tooth_trq))
+							if(sysCfgPara.TrqCmd_NEW>=(-tooth_trq))  // 力矩命令值 > 最大贴齿力矩
 							{
-								sysCfgPara.TrqCmd_NEW = -tooth_trq;
+								sysCfgPara.TrqCmd_NEW = -tooth_trq;  // 力矩命令值 = 最大贴齿力矩
 							}
 						}
 					}
@@ -386,137 +386,138 @@ void diagIO(void)
 						sysCfgPara.TrqCmd_NEW = 0;
 					}
 				}
-				if(sysCfgPara.TrqCmd_NEW<-trqLoopPara.Max_TorqueEle)
+				if(sysCfgPara.TrqCmd_NEW<-trqLoopPara.Max_TorqueEle)  // 力矩命令值 < -最大驱动力矩
 				{
-					sysCfgPara.TrqCmd_NEW = -trqLoopPara.Max_TorqueEle;
+					sysCfgPara.TrqCmd_NEW = -trqLoopPara.Max_TorqueEle;  // 力矩命令值 = 最大驱动力矩
 				}
 			}
 			else//空档
 			{
-				if(_IQabs(speed)<450)
+				if(_IQabs(speed)<450)  // 速度绝对值 < 450
 				{
 					sysCfgPara.TrqCmd_NEW = 0;
 				}
-				else if(_IQabs(speed)>500)
+				else if(_IQabs(speed)>500) // 速度绝对值 > 500
 				{
 					if(speed>500)//正转
 					{
-						sysCfgPara.TrqCmd_NEW = 0-_IQmpyI32(5,SysBase.invtorque);
+						sysCfgPara.TrqCmd_NEW = 0-_IQmpyI32(5,SysBase.invtorque);  //  设定力矩命令值
 					}
 					else//反转
 					{
-						sysCfgPara.TrqCmd_NEW = _IQmpyI32(5,SysBase.invtorque);
+						sysCfgPara.TrqCmd_NEW = _IQmpyI32(5,SysBase.invtorque);  //  设定力矩命令值
 					}
 				}
 			}
 
-			if(1 == alarm.field.break_error)
+			if(1 == alarm.field.break_error)  //刹车故障
 			{
-				sysCfgPara.TrqCmd_NEW = 0;
+				sysCfgPara.TrqCmd_NEW = 0;  // 力矩设定值 = 0
 			}
 
-			if(1 == Vehicle_cmd.cmdmode.data.gear_state)//前进档
+			if(1 == Vehicle_cmd.cmdmode.data.gear_state)//前进档     419-840
 			{
 				if(1 == Vehicle_cmd.cmdmode.data.slip_feedback_flag)//滑行能量回馈
 				{
-					if(_IQabs(sysCfgPara.TrqCmd_AI)<=tooth_trq)
+					if(_IQabs(sysCfgPara.TrqCmd_AI)<=tooth_trq)   //AI力矩命令值的绝对值 < 贴齿力矩
 					{
-						if(sysCfgPara.TrqCmd_AI<=0)
+						if(sysCfgPara.TrqCmd_AI<=0)  // AI力矩命令值 < 0
 						{
-							if((sysCfgPara.TrqCmd_AI == -tooth_trq)
-							 ||(up_step>tooth_trq_step))
+							if((sysCfgPara.TrqCmd_AI == -tooth_trq)  // AI力矩命令值 = -贴齿力矩
+							 ||(up_step>tooth_trq_step))  //上升步长 > 贴齿力矩步长
 							{
-								up_step = tooth_trq_step;
+								up_step = tooth_trq_step;  //上升步长 = 贴齿力矩步长
 							}
 							else
 							{
-								up_step = up_step-trq_step;
-								if(up_step<trq_step)
+								up_step = up_step-trq_step; //上升步长 = 上升步长 - 最小步长
+								if(up_step<trq_step)  //  上升步长 < 最小步长
 								{
-									up_step = trq_step;
+									up_step = trq_step;  //  上升步长 = 最小步长
 								}
 							}
-							if((sysCfgPara.TrqCmd_AI+up_step)>=0)
+							if((sysCfgPara.TrqCmd_AI+up_step)>=0)  // AI力矩命令值 + 上升步长 >= 0
 							{
-								up_step = _IQabs(sysCfgPara.TrqCmd_AI)+1;
+								up_step = _IQabs(sysCfgPara.TrqCmd_AI)+1;  //上升步长 = AI力矩命令值的绝对值 + 1
 							}
 							
-							if((down_step<trq_step)
-							 ||(0 == sysCfgPara.TrqCmd_AI))
+							if((down_step<trq_step)  //下降步长 < 最小步长
+							 ||(0 == sysCfgPara.TrqCmd_AI))  // AI力矩命令值 = 0
 							{
-								down_step = trq_step;
+								down_step = trq_step;  //下降步长 = 最小步长
 							}
 							else
 							{
-								down_step = down_step+trq_step;
+								down_step = down_step+trq_step;   //  下降步长 = 下降步长 + 最小步长
 								if(down_step>max_feedback_down_step)
 								{
 									down_step = max_feedback_down_step;
 								}
 							}
 						}
-						else
+						else   // AI力矩命令值 > 0
 						{
-							up_step = trq_step;
+							up_step = trq_step;  //上升步长 = 最小步长 = 1/50000
 							
-							if((sysCfgPara.TrqCmd_AI == tooth_trq)
-							 ||(down_step>tooth_trq_step))
+							if((sysCfgPara.TrqCmd_AI == tooth_trq)  // AI力矩命令值 = 贴齿力矩
+							 ||(down_step>tooth_trq_step))  // 下降步长 > 1/2500
 							{
-								down_step = tooth_trq_step;
+								down_step = tooth_trq_step;  // 下降步长 = 1/2500
 							}
 							else
 							{
-								down_step = down_step-trq_step;
-								if(down_step<trq_step)
+								down_step = down_step-trq_step;  // 下降步长 - 1/50000
+								if(down_step<trq_step)  //下降步长 < 最小步长
 								{
-									down_step = trq_step;
+									down_step = trq_step;  //下降步长 = 最小步长
 								}
 							}
-							if((sysCfgPara.TrqCmd_AI-down_step)<=0)
+							if((sysCfgPara.TrqCmd_AI-down_step)<=0)  //  AI力矩命令值 < 下降步长
 							{
-								down_step = _IQabs(sysCfgPara.TrqCmd_AI);
+								down_step = _IQabs(sysCfgPara.TrqCmd_AI);  //下降步长 =  AI力矩命令值的绝对值
 							}
 						}
 					}
-					else
+					else  //AI力矩命令值 > 贴齿力矩
 					{
-						if(sysCfgPara.TrqCmd_AI>tooth_trq)
+						if(sysCfgPara.TrqCmd_AI>tooth_trq) // AI力矩命令值 > 贴齿力矩  (+)
 						{
-							up_step = _IQmpy(_IQ(0.1),SysBase.invtorque);
-							down_step = _IQmpy(_IQ(1.0),SysBase.invtorque);
+							up_step = _IQmpy(_IQ(0.1),SysBase.invtorque);  //上升步长
+							down_step = _IQmpy(_IQ(1.0),SysBase.invtorque);  //下降步长
 							if((sysCfgPara.TrqCmd_AI-down_step)<=tooth_trq)
 							{
 								down_step = _IQabs(sysCfgPara.TrqCmd_AI-tooth_trq);
 							}
 						}
-						else
+						else  // AI力矩命令值 < 贴齿力矩 (-)
 						{
-							trq_deta = _IQabs(sysCfgPara.TrqCmd_NEW-sysCfgPara.TrqCmd_AI);
-							if(sysCfgPara.TrqCmd_AI>=-trq_lmt)
+							trq_deta = _IQabs(sysCfgPara.TrqCmd_NEW-sysCfgPara.TrqCmd_AI); //力矩命令值 - AI力矩命令值
+							if(sysCfgPara.TrqCmd_AI>=-trq_lmt)  // 力矩命令值 > -力矩极限值
 							{
 								x_value = _IQabs(sysCfgPara.TrqCmd_AI);
 								x_value = -_IQmpy(_IQ(6.25),x_value)+_IQ(0.125);
-								up_step = -_IQmpy(_IQ(0.069),x_value)+_IQmpy(_IQ(3.5),SysBase.invtorque);
+								up_step = -_IQmpy(_IQ(0.069),x_value)+_IQmpy(_IQ(3.5),SysBase.invtorque);   //上升步长
 							
 								x_value = _IQabs(sysCfgPara.TrqCmd_AI);
 								x_value = _IQmpy(_IQ(6.25),x_value)-_IQ(0.025);
-								down_step = _IQmpy(_IQ(0.001),x_value)+_IQmpy(_IQ(0.05),SysBase.invtorque);
+								down_step = _IQmpy(_IQ(0.001),x_value)+_IQmpy(_IQ(0.05),SysBase.invtorque); //下降步长
 							}
-							else if(trq_deta<trq_lmt)
+							else if(trq_deta<trq_lmt)  // 力矩命令值 < 力矩极限值
 							{
 								x_value = trq_deta;
 								x_value = -_IQmpy(_IQ(5.0),x_value)+_IQ(0.1);
-								up_step = -_IQmpy(_IQ(0.069),x_value)+_IQmpy(_IQ(3.5),SysBase.invtorque);
+								up_step = -_IQmpy(_IQ(0.069),x_value)+_IQmpy(_IQ(3.5),SysBase.invtorque);  //上升步长
 								
 								x_value = trq_deta;
 								x_value = -_IQmpy(_IQ(5.0),x_value)+_IQ(0.1);
-								down_step = -_IQmpy(_IQ(0.001),x_value)+_IQmpy(_IQ(0.1),SysBase.invtorque);
+								down_step = -_IQmpy(_IQ(0.001),x_value)+_IQmpy(_IQ(0.1),SysBase.invtorque);  //下降步长
 							}
 							else
 							{
-								up_step = max_feedback_up_step;
-								down_step = max_feedback_down_step;
+								up_step = max_feedback_up_step;  //上升步长
+								down_step = max_feedback_down_step;  //下降步长
 							}
+							//上升步长限制
 							if(up_step>max_feedback_up_step)
 							{
 								up_step = max_feedback_up_step;
@@ -525,10 +526,12 @@ void diagIO(void)
 							{
 								up_step = min_feedback_up_step;
 							}
+
 							if((sysCfgPara.TrqCmd_AI+up_step)>=-tooth_trq)
 							{
 								up_step = _IQabs(_IQabs(sysCfgPara.TrqCmd_AI)-tooth_trq);
 							}
+							//下降步长限制
 							if(down_step>max_feedback_down_step)
 							{
 								down_step = max_feedback_down_step;
@@ -542,14 +545,16 @@ void diagIO(void)
 				}
 				else if(1 == Vehicle_cmd.cmdmode.data.brake_feedback_flag)//制动能量回馈
 				{
-					if(_IQabs(sysCfgPara.TrqCmd_AI)<=tooth_trq)
+				    // <同上1
+
+					if(_IQabs(sysCfgPara.TrqCmd_AI)<=tooth_trq)  //AI力矩命令值的绝对值 <= 贴齿力矩
 					{
-						if(sysCfgPara.TrqCmd_AI<=0)
+						if(sysCfgPara.TrqCmd_AI<=0) //AI力矩命令值 <= 0
 						{
-							if((sysCfgPara.TrqCmd_AI == -tooth_trq)
-							 ||(up_step>tooth_trq_step))
+							if((sysCfgPara.TrqCmd_AI == -tooth_trq)  // AI力矩命令值 = -贴齿力矩
+							 ||(up_step>tooth_trq_step))  //下降步长 > 1/2500
 							{
-								up_step = tooth_trq_step;
+								up_step = tooth_trq_step;  //下降步长 = 1/2500
 							}
 							else
 							{
@@ -662,9 +667,14 @@ void diagIO(void)
 							}
 						}
 					}
+
+				    // 同上1>
+
 				}
 				else//前进驱动
 				{
+				    // <同上2
+
 					if(_IQabs(sysCfgPara.TrqCmd_AI)<=tooth_trq)
 					{
 						if(sysCfgPara.TrqCmd_AI<0)
@@ -836,10 +846,15 @@ void diagIO(void)
 							up_step = _IQabs(_IQabs(sysCfgPara.TrqCmd_AI)-tooth_trq);
 						}
 					}	
+
+					// 同上3>
+
 				}
 			}
-			else if(2 == Vehicle_cmd.cmdmode.data.gear_state)//后退档
+			else if(2 == Vehicle_cmd.cmdmode.data.gear_state)//后退档  841 -1058
 			{
+			    // <同上4
+
 				if(_IQabs(sysCfgPara.TrqCmd_AI)<=tooth_trq)
 				{
 					if(sysCfgPara.TrqCmd_AI>0)
@@ -1054,7 +1069,10 @@ void diagIO(void)
 					{
 						down_step = trq_step;
 					}
-				}		
+				}
+
+				// 同上4>
+
 			}
 			else//空档
 			{
@@ -1118,7 +1136,7 @@ void diagIO(void)
 	}
 }
 
-void AIFeedback(void)
+void AIFeedback(void)//油门反馈
 {
 	int16 i = 0;
     static int16 ConversionCnt = 0;
@@ -1128,81 +1146,81 @@ void AIFeedback(void)
 	_iq ai_deta = 0;
 	_iq AI1_ad_tmp = 0;
 
-	if(TRQCMD_SOURCE_AI == EV_MCU_Para.field.TrqCmd_SourceType)   //力矩命令来源 = 0 AI
+	if(TRQCMD_SOURCE_AI == EV_MCU_Para.field.TrqCmd_SourceType)   //力矩命令来源 = 0 AI1
 	{
-		if(sysFbkPara.AI1_fbk_ad>EV_MCU_Para.field.AI1_offset_off)
+		if(sysFbkPara.AI1_fbk_ad>EV_MCU_Para.field.AI1_offset_off)  // 油门的AD采样值 > 2350 = 100%
 		{
-			AI1_ad_tmp = EV_MCU_Para.field.AI1_offset_off+1;
+			AI1_ad_tmp = EV_MCU_Para.field.AI1_offset_off+1; // 2350 + 1 = 100%
 		}
 		else
 		{
-			AI1_ad_tmp = sysFbkPara.AI1_fbk_ad;
+			AI1_ad_tmp = sysFbkPara.AI1_fbk_ad;  // 反之赋值为当前采样值
 		}
 		if(0 == AD_AISelf_Flag)
 		{
 			AD_AISelf_Cnt++;
-			AD_AI1_Sum += AI1_ad_tmp;
-			if(AD_AISelf_Cnt>=128)
+			AD_AI1_Sum += AI1_ad_tmp;   //AD采样累加值
+			if(AD_AISelf_Cnt>=128)  //1280ms
 			{
 				AD_AISelf_Flag = 1;
 				AD_AISelf_Cnt = 0;
-				AI1_ad_offset = AD_AI1_Sum>>7;
-				if(AI1_ad_offset > (EV_MCU_Para.field.AI1_offset_on-20))
+				AI1_ad_offset = AD_AI1_Sum>>7;  //计算平均ad采样值
+				if(AI1_ad_offset > (EV_MCU_Para.field.AI1_offset_on-20))  //550  (<550 认为是0)
 				{
-					emsw2.field.Torque1_err = 1;
+					emsw2.field.Torque1_err = 1;  // 置位错误标志
 				}
-				for (i = 0; i < AI_BUFFER_LENGTH; i++)
+				for (i = 0; i < AI_BUFFER_LENGTH; i++)  // AI_BUFFER_LENGTH = 8
 				{
-					AI1_Ad_Buffer[i]  = AI1_ad_offset;
+					AI1_Ad_Buffer[i]  = AI1_ad_offset;  //将平均AD采样值放入缓存数组
 				}
 			}
 		}
 		else
 		{
-			if(1 == emsw2.field.Torque1_err)
+			if(1 == emsw2.field.Torque1_err)    // 错误标志为1
 			{
-				AD_AI1_Sum = AD_AI1_Sum-(AD_AI1_Sum>>7)+AI1_ad_tmp;
-				AI1_ad_offset = AD_AI1_Sum>>7;
-				if(AI1_ad_offset<(EV_MCU_Para.field.AI1_offset_on-30))
+				AD_AI1_Sum = AD_AI1_Sum-(AD_AI1_Sum>>7)+AI1_ad_tmp;  //AD采样累加值 = AD采样累加值 - 平均值 + 当前值  (滤波)
+				AI1_ad_offset = AD_AI1_Sum>>7; // 最新的平均值
+				if(AI1_ad_offset<(EV_MCU_Para.field.AI1_offset_on-30))  // 平均值 < 550 -30
 				{
-					emsw2.field.Torque1_err = 0;
+					emsw2.field.Torque1_err = 0;  // 清除错误标志
 				}
-				for (i = 0; i < AI_BUFFER_LENGTH; i++)
+				for (i = 0; i < AI_BUFFER_LENGTH; i++) // AI_BUFFER_LENGTH = 8
 				{
-					AI1_Ad_Buffer[i]  = AI1_ad_offset;
+					AI1_Ad_Buffer[i]  = AI1_ad_offset; //将平均AD采样值放入缓存数组
 				}
 			}
-			else
+			else // 错误标志为0
 			{
-				AI1_Ad_Buffer[ConversionCnt] = AI1_ad_tmp;
+				AI1_Ad_Buffer[ConversionCnt] = AI1_ad_tmp;   //将当前AD采样值放入 缓存数组
 				for (i = 0; i < AI_BUFFER_LENGTH; i++ )
 				{
-					AI1_ad += AI1_Ad_Buffer[i];
+					AI1_ad += AI1_Ad_Buffer[i];  //将缓存累加
 				}
-				AI1_ad  = AI1_ad>>3;
+				AI1_ad  = AI1_ad>>3;  //缓存平均值
 				ConversionCnt++;
-				ConversionCnt = ConversionCnt%AI_BUFFER_LENGTH;
+				ConversionCnt = ConversionCnt%AI_BUFFER_LENGTH;  // ConversionCnt 0-7 循环
 
-				if(AI1_ad<EV_MCU_Para.field.AI1_offset_on)
+				if(AI1_ad<EV_MCU_Para.field.AI1_offset_on)   // 缓存平均值 < 550
 				{
-					AI1_ad = EV_MCU_Para.field.AI1_offset_on;
+					AI1_ad = EV_MCU_Para.field.AI1_offset_on;  // 缓存平均值 = 550
 				}
-				if(AI1_ad>EV_MCU_Para.field.AI1_offset_off)
+				if(AI1_ad>EV_MCU_Para.field.AI1_offset_off)  // 缓存平均值 > 2350
 				{
-					AI1_ad = EV_MCU_Para.field.AI1_offset_off;
+					AI1_ad = EV_MCU_Para.field.AI1_offset_off;  // 缓存平均值 = 2350
 				}
-				AI1_ad = AI1_ad-EV_MCU_Para.field.AI1_offset_on;
+				AI1_ad = AI1_ad-EV_MCU_Para.field.AI1_offset_on;  // 缓存平均值 - 550
 
-				ai_deta = (EV_MCU_Para.field.AI1_offset_off-EV_MCU_Para.field.AI1_offset_on);
-				tmp = _IQ15div(AI1_ad,ai_deta);
-				sysFbkPara.AI1_fbk = _IQ15mpy(tmp,EV_MCU_Para.field.Motor_PeakTorqueEle);//IQ15
-				Vehicle_cmd.torque_ref = sysFbkPara.AI1_fbk;//IQ15
+				ai_deta = (EV_MCU_Para.field.AI1_offset_off-EV_MCU_Para.field.AI1_offset_on);  //2350 - 550
+				tmp = _IQ15div(AI1_ad,ai_deta);  // 线性比例
+				sysFbkPara.AI1_fbk = _IQ15mpy(tmp,EV_MCU_Para.field.Motor_PeakTorqueEle);//IQ15   //线性比例 * 峰值扭矩
+				Vehicle_cmd.torque_ref = sysFbkPara.AI1_fbk;//IQ15  将扭矩值传输至力矩环
 				
-				if((1 == Vehicle_cmd.cmdmode.data.brake_state) 
-				 &&(Vehicle_cmd.torque_ref>0))
+				if((1 == Vehicle_cmd.cmdmode.data.brake_state) //刹车状态
+				 &&(Vehicle_cmd.torque_ref>0))  //力矩值>0
 				{
 					AD_AISelf_Cnt++;
-					if(AD_AISelf_Cnt > 400)
+					if(AD_AISelf_Cnt > 400)   //4S
 					{
 						alarm.field.break_error = 1;//刹车故障
 						AD_AISelf_Cnt         = 500;
