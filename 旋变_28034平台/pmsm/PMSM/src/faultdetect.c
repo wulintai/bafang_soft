@@ -143,7 +143,7 @@ void Vdc_faultDetect(void)
 	if((motor_sys_init_cnt>=250)
 	 &&(motor_main_relay_cnt>=1000))
 	{
-		if(_IQtoIQ15(sysFbkPara.Vdc_filter_protect) > EV_MCU_Para.field.Motor_Protect_VdcOv)
+		if(_IQtoIQ15(sysFbkPara.Vdc_filter_protect) > EV_MCU_Para.field.Motor_Protect_VdcOv)  //过压故障 135V
 		{
 			emsw.field.vdc_overVolt = 1;
 		}
@@ -156,7 +156,7 @@ void Vdc_faultDetect(void)
 			}
 		}
 
-		if (_IQtoIQ15(sysFbkPara.Vdc_filter_protect) < EV_MCU_Para.field.Motor_Protect_VdcLv)
+		if (_IQtoIQ15(sysFbkPara.Vdc_filter_protect) < EV_MCU_Para.field.Motor_Protect_VdcLv)  //低压故障80V
 		{
 			if(1 == sccw1.field.run_enable)
 			{
@@ -348,15 +348,15 @@ void CrtDetectProtect(void)
 	{
 		if(scsw2.field.adCalib_state_finsh && !scsw2.field.igbt_state )
 		{
-			if(_IQ15abs(sysFbkPara.Speed_fbk_HMI)<_IQ15div(30,SysBase.speed))
+			if(_IQ15abs(sysFbkPara.Speed_fbk_HMI)<_IQ15div(30,SysBase.speed))   //速度的绝对值<30
 			{
-				if(sysFbkPara.Is_fbk_HMI_fiter > CrtEn_CrtDetectFault)
+				if(sysFbkPara.Is_fbk_HMI_fiter > CrtEn_CrtDetectFault)   //相电流>10
 				{
 					Cnt_CrtDetectFault ++;
 				}
 				if(Cnt_CrtDetectFault >= 1000)
 				{
-					emsw1.field.Crt_detect_fault = 1;
+					emsw1.field.Crt_detect_fault = 1;   //电流检测错误
 					Cnt_CrtDetectFault           = 0;
 				}
 			}

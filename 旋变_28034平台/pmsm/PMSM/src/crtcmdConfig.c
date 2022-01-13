@@ -67,7 +67,7 @@ void crtcmdConfigctrl(tag_crtCmd_vars *v)
 			}
 		}
 	}
-	else if(MTR_TRQ_LOOP == v->runLoop_state)
+	else if(MTR_TRQ_LOOP == v->runLoop_state)//力矩环
 	{
 		if(3 == v->weak_mode)
 		{
@@ -80,7 +80,7 @@ void crtcmdConfigctrl(tag_crtCmd_vars *v)
 			v->IqCmd = v->trqLoop_Iqcmd_real;
 		}
 	}
-	else if(MTR_CURRENT_LOOP == v->runLoop_state)
+	else if(MTR_CURRENT_LOOP == v->runLoop_state)  //电流环
 	{
 		if(1 == v->MTPA_mode)//Enable MTPA
 		{

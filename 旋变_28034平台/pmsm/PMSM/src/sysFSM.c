@@ -21,61 +21,61 @@ void sysFSMInit()
 	{
 		switch(i)
 		{
-		case SYS_INIT:
-			sysFSMState[i].cond=&sysInitCond;
-			sysFSMState[i].action=&sysInitAct;
-			sysFSMState[i].entrance=&sysInitEntrance;
-			sysFSMState[i].export=&sysInitExport;
+		case SYS_INIT:     //系统初始化
+			sysFSMState[i].cond=&sysInitCond;    //弱点自检
+			sysFSMState[i].action=&sysInitAct;   //系统初始化，参数设置
+			sysFSMState[i].entrance=&sysInitEntrance;  //参数初始化/清零
+			sysFSMState[i].export=&sysInitExport;  //空
 			break;
-		case SYS_READY:
-			sysFSMState[i].cond=&sysReadyCond;
-			sysFSMState[i].action=&sysReadyAct;
-			sysFSMState[i].entrance=&sysReadyEntrance;
-			sysFSMState[i].export=&sysReadyExport;
+		case SYS_READY:    //准备状态
+			sysFSMState[i].cond=&sysReadyCond;   //强电自检
+			sysFSMState[i].action=&sysReadyAct;  //同上的系统初始化
+			sysFSMState[i].entrance=&sysReadyEntrance; //参数初始化/清零  同上除了设置系统状态
+			sysFSMState[i].export=&sysReadyExport; //空
 			break;
-		case SYS_RUN:
-			sysFSMState[i].cond=&sysRunCond;
-			sysFSMState[i].action=&sysRunAct;
-			sysFSMState[i].entrance=&sysRunEntrance;
-			sysFSMState[i].export=&sysRunExport;
+		case SYS_RUN:      //运行
+			sysFSMState[i].cond=&sysRunCond;     //系统自检
+			sysFSMState[i].action=&sysRunAct;    //设置参数
+			sysFSMState[i].entrance=&sysRunEntrance;  //设置运行状态
+			sysFSMState[i].export=&sysRunExport; //空
 			break;
-		case SYS_SPDLMT:
-			sysFSMState[i].cond=&sysSpdLmtCond;
-			sysFSMState[i].action=&sysSpdLmtAct;
+		case SYS_SPDLMT:   //限速
+			sysFSMState[i].cond=&sysSpdLmtCond;  //限速判断
+			sysFSMState[i].action=&sysSpdLmtAct; //
 			sysFSMState[i].entrance=&sysSpdLmtEntrance;
 			sysFSMState[i].export=&sysSpdLmtExport;
 			break;
-		case SYS_ZEROSTOP:
+		case SYS_ZEROSTOP: //驻坡
 			sysFSMState[i].cond=&sysZeroStopCond;
 			sysFSMState[i].action=&sysZeroStopAct;
 			sysFSMState[i].entrance=&sysZeroStopEntrance;
 			sysFSMState[i].export=&sysZeroStopExport;
 			break;
-		case SYS_POWERDOWN:
+		case SYS_POWERDOWN://下电
 			sysFSMState[i].cond=&sysPowerdownCond;
 			sysFSMState[i].action=&sysPowerdownAct;
 			sysFSMState[i].entrance=&sysPowerdownEntrance;
 			sysFSMState[i].export=&sysPowerdownExport;
 			break;
-		case SYS_DIAGNOSIS:
+		case SYS_DIAGNOSIS://自检
 			sysFSMState[i].cond= &sysDiagnosisCond;
 			sysFSMState[i].action= &sysDiagnosisAct;
 			sysFSMState[i].entrance= &sysDiagnosisEntrance;
 			sysFSMState[i].export= &sysDiagnosisExport;
 			break;
-		case SYS_FAULT:
+		case SYS_FAULT:    //故障
 			sysFSMState[i].cond=&sysFaultCond;
 			sysFSMState[i].action=&sysFaultAct;
 			sysFSMState[i].entrance=&sysFaultEntrance;
 			sysFSMState[i].export=&sysFaultExport;
 			break;
-		case SYS_UDCLOOP:
+		case SYS_UDCLOOP:  //电压环
 			sysFSMState[i].cond=&sysUdcloopCond;
 			sysFSMState[i].action=&sysUdcloopAct;
 			sysFSMState[i].entrance=&sysUdcloopEntrance;
 			sysFSMState[i].export=&sysUdcloopExport;
 			break;
-		default:
+		default:           //默认
 			sysFSMState[i].cond=&sysPowerdownCond;
 			sysFSMState[i].action=&sysPowerdownAct;
 			sysFSMState[i].entrance=&sysPowerdownEntrance;
@@ -127,8 +127,8 @@ int sysInitCond()
 
 void sysInitAct()
 {
-	sccw2.field.run_enable	    = 0;
-	sccw2.field.runLoop_mode    = sccw1.field.runLoop_mode    = MTR_TRQ_LOOP;
+	sccw2.field.run_enable	    = 0;                //运行使能
+	sccw2.field.runLoop_mode    = sccw1.field.runLoop_mode    = MTR_TRQ_LOOP;    //力矩环
 }
 
 void sysInitEntrance()
@@ -150,9 +150,9 @@ void sysInitExport()
 int sysReadyCond()
 {
 	if (
-		!sccw2.field.diag_enable              && !scsw2.field.fault_flag
-		&& !sccw1.field.shutoff 			  &&  scsw2.field.vdc_state
-		&& scsw2.field.adCalib_state          && !sccw1.field.run_enable
+		!sccw2.field.diag_enable              && !scsw2.field.fault_flag     //未进入电机自学习&&无故障
+		&& !sccw1.field.shutoff 			  &&  scsw2.field.vdc_state      //上电&&预充电完成
+		&& scsw2.field.adCalib_state          && !sccw1.field.run_enable     //AD校验完成&&逆变器未开管
 		)
 	{
 		return 1;
@@ -165,8 +165,8 @@ int sysReadyCond()
 
 void sysReadyAct()
 {
-	sccw2.field.run_enable		= 0;
-	sccw2.field.runLoop_mode    = sccw1.field.runLoop_mode    = MTR_TRQ_LOOP;
+	sccw2.field.run_enable		= 0;  //运行使能
+	sccw2.field.runLoop_mode    = sccw1.field.runLoop_mode    = MTR_TRQ_LOOP;      //力矩环
 }
 
 void sysReadyEntrance()
@@ -188,11 +188,11 @@ void sysReadyExport()
 int sysRunCond()
 {
 	if (
-		!sccw2.field.diag_enable	&& !scsw2.field.fault_flag
-		&& !sccw1.field.shutoff		&& sccw1.field.run_enable
-		&& !scsw2.field.SpdLmt_state&& !scsw2.field.zero_state
-		&& scsw2.field.vdc_state	&& scsw2.field.adCalib_state
-		&& !scsw2.field.Udcloop_state
+		!sccw2.field.diag_enable	&& !scsw2.field.fault_flag       //未进入自学习&&无故障
+		&& !sccw1.field.shutoff		&& sccw1.field.run_enable        //上电&&逆变器打开
+		&& !scsw2.field.SpdLmt_state&& !scsw2.field.zero_state       //未限速&&未驻坡
+		&& scsw2.field.vdc_state	&& scsw2.field.adCalib_state     //预充电完成&&AD校验完成
+		&& !scsw2.field.Udcloop_state                                //不是电压环
 		)
 	{
 		return 1;
@@ -205,13 +205,13 @@ int sysRunCond()
 
 void sysRunAct()
 {
-	sccw2.field.runLoop_mode    = sccw1.field.runLoop_mode;
-	sccw2.field.run_enable      = sccw1.field.run_enable;
+	sccw2.field.runLoop_mode    = sccw1.field.runLoop_mode;     //设置运行环
+	sccw2.field.run_enable      = sccw1.field.run_enable;       //逆变器状态
 }
 
 void sysRunEntrance()
 {
-	sccw2.field.run_enable      = sccw1.field.run_enable;
+	sccw2.field.run_enable      = sccw1.field.run_enable;       //逆变器状态
 	scsw1.field.system_state	= SYS_RUN;
 	sysState					= SYS_RUN;
 }
@@ -289,10 +289,10 @@ void sysUdcloopExport()
 int sysSpdLmtCond()
 {
 	if (
-		sccw1.field.run_enable 	&& !scsw2.field.fault_flag
-		&& !sccw1.field.shutoff	&&!sccw2.field.diag_enable
-		&&  scsw2.field.vdc_state&& scsw2.field.adCalib_state
-		&&  scsw2.field.SpdLmt_state
+		sccw1.field.run_enable 	&& !scsw2.field.fault_flag         //逆变器打开&&无故障
+		&& !sccw1.field.shutoff	&&!sccw2.field.diag_enable         //上电状态&&未自学习
+		&&  scsw2.field.vdc_state&& scsw2.field.adCalib_state      //预充电完成&&AD校验完成
+		&&  scsw2.field.SpdLmt_state                               //有限速标志
 		)
 	{
 		return 1;
@@ -308,30 +308,30 @@ void sysSpdLmtAct()
 	_iq speed_limit = 0;
 	static Uint16 speed_deta_count = 0;
 
-	if(scsw2.field.SpdLmt_state == 1)
+	if(scsw2.field.SpdLmt_state == 1)   //正向限速
 	{
-		if(1 == VCU_IOstate.field.In_fwdrev)
+		if(1 == VCU_IOstate.field.In_fwdrev)     //正转
 		{
 			//sysCfgPara.SpdCmd =_IQ15toIQ(EV_MCU_Para.field.Spd_FWD_E_Limt_Spd);
 
 			if(1 == vehicle_io_state.data.DI6_DSP)//低速档
 			{
-				speed_limit = _IQ15toIQ(EV_MCU_Para.field.Spd_FWD_L_Limt_Spd);
+				speed_limit = _IQ15toIQ(EV_MCU_Para.field.Spd_FWD_L_Limt_Spd);   //4500转
 			}
 			else//高速档
 			{
-				speed_limit = _IQ15toIQ(EV_MCU_Para.field.Spd_FWD_Limt_Spd);
+				speed_limit = _IQ15toIQ(EV_MCU_Para.field.Spd_FWD_Limt_Spd);     //4500转
 			}
 			speed_deta_count++;
 			if(speed_deta_count>50)//Delay 100ms
 			{
 				speed_deta_count = 0;
-				if(spdlmt_cmd>speed_limit)
+				if(spdlmt_cmd>speed_limit)   //速度环的速度命令值>限速值
 				{
-					spdlmt_cmd = spdlmt_cmd-_IQmpyI32(10,SysBase.invspeed);
+					spdlmt_cmd = spdlmt_cmd-_IQmpyI32(10,SysBase.invspeed);   //速度环的速度命令值-10
 					if(spdlmt_cmd<speed_limit)
 					{
-						spdlmt_cmd = speed_limit;
+						spdlmt_cmd = speed_limit;    //速度环的速度命令值不小于限速值
 					}
 				}
 				else if(spdlmt_cmd<speed_limit)
@@ -343,13 +343,13 @@ void sysSpdLmtAct()
 					}
 				}
 			}
-			sysCfgPara.SpdCmd = spdlmt_cmd;
+			sysCfgPara.SpdCmd = spdlmt_cmd;    //设置速度命令值
 		}
 		else
 		{
 			//sysCfgPara.SpdCmd =_IQ15toIQ(EV_MCU_Para.field.Spd_FWD_Limt_Spd);
 
-			speed_limit = _IQ15toIQ(EV_MCU_Para.field.Spd_FWD_Limt_Spd);
+			speed_limit = _IQ15toIQ(EV_MCU_Para.field.Spd_FWD_Limt_Spd);   //4500转
 			speed_deta_count++;
 			if(speed_deta_count>50)//Delay 100ms
 			{
@@ -371,18 +371,18 @@ void sysSpdLmtAct()
 					}
 				}
 			}
-			sysCfgPara.SpdCmd = spdlmt_cmd;
+			sysCfgPara.SpdCmd = spdlmt_cmd;//设置速度命令值
 		}
 	}
-	else if(scsw2.field.SpdLmt_state == 2)
+	else if(scsw2.field.SpdLmt_state == 2)   //反转
 	{
 		if(1 == vehicle_io_state.data.DI6_DSP)//低速档
 		{
-			speed_limit = 0-_IQ15toIQ(EV_MCU_Para.field.Spd_FWD_E_Limt_Spd);
+			speed_limit = 0-_IQ15toIQ(EV_MCU_Para.field.Spd_FWD_E_Limt_Spd);  //1600转
 		}
 		else//高速档
 		{
-			speed_limit = 0-_IQ15toIQ(EV_MCU_Para.field.Spd_REV_Limt_Spd);
+			speed_limit = 0-_IQ15toIQ(EV_MCU_Para.field.Spd_REV_Limt_Spd);    //750转
 		}
 		speed_deta_count++;
 		if(speed_deta_count>50)//Delay 200ms
@@ -405,10 +405,10 @@ void sysSpdLmtAct()
 				}
 			}
 		}
-		sysCfgPara.SpdCmd = spdlmt_cmd;
+		sysCfgPara.SpdCmd = spdlmt_cmd;  //设置速度命令值
 	}
-	sccw2.field.run_enable     = sccw1.field.run_enable;
-	sccw2.field.runLoop_mode   = MTR_SPEED_LOOP;
+	sccw2.field.run_enable     = sccw1.field.run_enable;    //逆变器状态
+	sccw2.field.runLoop_mode   = MTR_SPEED_LOOP;            //设置为速度环
 
 }
 void sysSpdLmtEntrance()

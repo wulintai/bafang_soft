@@ -150,73 +150,73 @@ void zero_stationcond()             //驻坡功能
 	speed = sysFbkPara.Speed;
 	//pre_trq_value = _IQmpy(_IQ(0.5),SysBase.invtorque)-3000;
 	
-	if((1 == EV_MCU_Para.field.Zero_Sation_Enable)
-	 &&(1 == scsw2.field.igbt_state))
+	if((1 == EV_MCU_Para.field.Zero_Sation_Enable)  //驻坡使能
+	 &&(1 == scsw2.field.igbt_state))               //逆变器开管    使能驱动芯片
 	{
-		if(0 == scsw2.field.zero_state)//进入驻坡
+		if(0 == scsw2.field.zero_state)// 未驻坡的情况下
 		{
-			if((((1 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed<-zero_speed_throad))
-			  ||((2 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed > zero_speed_throad)))
-			 &&((0 == Vehicle_cmd.cmdmode.data.brake_state)&&(0 == alarm.field.gear_fault)&&(0 == Vehicle_cmd.torque_ref)))//进入驻坡
+			if((((1 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed<-zero_speed_throad))     //前进情况下，速度向后达到阈值
+			  ||((2 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed > zero_speed_throad)))   //后退情况下，速度向前达到阈值
+			 &&((0 == Vehicle_cmd.cmdmode.data.brake_state)&&(0 == alarm.field.gear_fault)&&(0 == Vehicle_cmd.torque_ref)))// &&未刹车&&驻坡失败警告=0&&油门力矩=0
 			{
-				scsw2.field.zero_state = 1;
+				scsw2.field.zero_state = 1;   //进入驻坡
 				VCU_IOstate.field.zero_disable_flag = 0;
-				VCU_IOstate.field.zero_or_start_flag = 0;
+				VCU_IOstate.field.zero_or_start_flag = 0;   //驻坡启动
 			}
-			else if((1 == Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)
-				  &&(0 == Vehicle_cmd.cmdmode.data.brake_state)
-				  &&(0 != Vehicle_cmd.torque_ref)
-				  &&(0 != Vehicle_cmd.cmdmode.data.gear_state)
+			else if((1 == Vehicle_cmd.cmdmode.data.gear_swap_trq_flag)  //制动
+				  &&(0 == Vehicle_cmd.cmdmode.data.brake_state)         //未刹车
+				  &&(0 != Vehicle_cmd.torque_ref)                       //油门力矩≠0
+				  &&(0 != Vehicle_cmd.cmdmode.data.gear_state)          //不是空挡
 				  /*&&(_IQabs(trqLoop_trqRampref)>=pre_trq_value)*/)//前后换档松刹车踩油门起步
 			{
-				scsw2.field.zero_state = 1;
+				scsw2.field.zero_state = 1;  //进入驻坡
 				VCU_IOstate.field.zero_disable_flag = 0;
-				VCU_IOstate.field.zero_or_start_flag = 1;
+				VCU_IOstate.field.zero_or_start_flag = 1;   //驻坡启动
 			}
 
-			if(1 == Vehicle_cmd.cmdmode.data.gear_swap_zero_flag)
+			if(1 == Vehicle_cmd.cmdmode.data.gear_swap_zero_flag)   //有手刹
 			{
-				if((1 == scsw2.field.zero_state)
-				 ||((1 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed> 50))
-				 ||((2 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed<-50))
-				 ||(0 == Vehicle_cmd.cmdmode.data.gear_state))
+				if((1 == scsw2.field.zero_state)    //驻坡状态
+				 ||((1 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed> 50))   //前进状态&&速度>50
+				 ||((2 == Vehicle_cmd.cmdmode.data.gear_state)&&(speed<-50))   //后退状态&&速度<-50
+				 ||(0 == Vehicle_cmd.cmdmode.data.gear_state))  //空挡
 				{
-					Vehicle_cmd.cmdmode.data.gear_swap_zero_flag = 0;
-					zero_speed_throad = 15;
+					Vehicle_cmd.cmdmode.data.gear_swap_zero_flag = 0;       //不需要手刹
+					zero_speed_throad = 15;                  //驻坡速度阈值
 				}
 			}
 
-			if(1 == zero_station_trqCmd_flag)
+			if(1 == zero_station_trqCmd_flag)    //使用驻坡力矩标志
 			{
-				if(((0 != Vehicle_cmd.cmdmode.data.gear_state) && (0 != Vehicle_cmd.torque_ref))
-				 ||(1 == scsw2.field.zero_state))
+				if(((0 != Vehicle_cmd.cmdmode.data.gear_state) && (0 != Vehicle_cmd.torque_ref))  //非空挡有前进力矩
+				 ||(1 == scsw2.field.zero_state))                                                 //处于驻坡状态
 				{
-					zero_station_trqCmd_flag = 0;
-					Vehicle_cmd.cmdmode.data.zero_station_free_flag = 0;
+					zero_station_trqCmd_flag = 0;                                                 //不使用驻坡力矩
+					Vehicle_cmd.cmdmode.data.zero_station_free_flag = 0;                          //力矩环
 				}
 			}
-			if(0 != VCU_IOstate.field.exit_zero_add_trq_flag)
+			if(0 != VCU_IOstate.field.exit_zero_add_trq_flag)    //离开驻坡时需要增加力矩
 			{
-				if((0 == Vehicle_cmd.cmdmode.data.gear_state)
-				 ||(1 == Vehicle_cmd.cmdmode.data.brake_state)
-				 ||(1 == scsw2.field.zero_state)
-				 ||(0 == Vehicle_cmd.torque_ref))
+				if((0 == Vehicle_cmd.cmdmode.data.gear_state)    //空挡
+				 ||(1 == Vehicle_cmd.cmdmode.data.brake_state)   //有刹车
+				 ||(1 == scsw2.field.zero_state)                 //驻坡
+				 ||(0 == Vehicle_cmd.torque_ref))                //油门无力矩
 				{
-					VCU_IOstate.field.exit_zero_add_trq_flag = 0;
+					VCU_IOstate.field.exit_zero_add_trq_flag = 0;//离开驻坡时不需要增加力矩
 				}
 			}
 		}
 		else//退出驻坡
 		{
-			if(0 == VCU_IOstate.field.zero_or_start_flag)
+			if(0 == VCU_IOstate.field.zero_or_start_flag)    //非驻坡启动
 			{
-				if(0 == VCU_IOstate.field.exit_zero_add_trq_flag)
+				if(0 == VCU_IOstate.field.exit_zero_add_trq_flag)  //离开驻坡时不需要增加力矩
 				{
-					if((0 != Vehicle_cmd.torque_ref)
-					 &&(0 != Vehicle_cmd.cmdmode.data.gear_state))
+					if((0 != Vehicle_cmd.torque_ref)         //油门无力矩
+					 &&(0 != Vehicle_cmd.cmdmode.data.gear_state)) //非空挡
 					{
-						VCU_IOstate.field.exit_zero_add_trq_flag = 1;
-						zero_station_trqCmd_store = zero_station_trqCmd;
+						VCU_IOstate.field.exit_zero_add_trq_flag = 1; //离开驻坡时需要增加力矩
+						zero_station_trqCmd_store = zero_station_trqCmd;   //
 					}
 				}
 				else if(1 == VCU_IOstate.field.exit_zero_add_trq_flag)

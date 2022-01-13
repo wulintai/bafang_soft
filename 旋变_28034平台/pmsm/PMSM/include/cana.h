@@ -8,7 +8,7 @@ typedef struct
 		struct
 		{
 			unsigned feedback_flag		   :1;	//0:关管，    1：开管
-			unsigned gear_swap_trq_flag   :2;  //0:驱动，    1：制动
+			unsigned gear_swap_trq_flag   :2;  //0:驱动，    1：制动      换挡且速度<50 = 制动
 			unsigned sport_mode_flag       :1;
 			unsigned eco_mode_flag         :1;
 			unsigned zero_station_free_flag         :2;  //0:力矩环， 1：速度环， 2：电流环

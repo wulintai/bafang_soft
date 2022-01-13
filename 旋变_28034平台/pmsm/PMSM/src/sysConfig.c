@@ -112,7 +112,7 @@ void trqCmdConfig(void)
 			else
 			{
 				sysCfgPara.TrqCmd_AIfilter = sysCfgPara.TrqCmd_AIfilter+_IQmpy(_IQ(0.1),(sysCfgPara.TrqCmd_AI-sysCfgPara.TrqCmd_AIfilter));
-				sysCfgPara.TrqCmd = sysCfgPara.TrqCmd_AIfilter;
+				sysCfgPara.TrqCmd = sysCfgPara.TrqCmd_AIfilter;   //trqLoopInput
 			}
 			break;
 		case TRQCMD_SOURCE_ECANA:
@@ -123,9 +123,9 @@ void trqCmdConfig(void)
 	}
 }
 
-void vdcctrl(void)
+void vdcctrl(void)  //Ä¸ÏßµçÑ¹¿ØÖÆ
 {
-    if(sysCfgPara.Vdc>_IQ15toIQ(EV_MCU_Para.field.Motor_Protect_VdcLv))
+    if(sysCfgPara.Vdc>_IQ15toIQ(EV_MCU_Para.field.Motor_Protect_VdcLv))   //80V
     {
     	scsw2.field.vdc_state = 1;
     }

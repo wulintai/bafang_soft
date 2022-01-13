@@ -141,16 +141,16 @@ void taskSchedule(void)
 void task500usCtrl(void)
 {
 	task_struct[TASK500US].task_flag = TASK_CLEAR_FLAG;
-	AdcSEQ2();
-	HallDetectProtect();
+	AdcSEQ2();  //读取adc的值
+	HallDetectProtect();  //空
 }
 
 void task1msCtrl(void)
 {
 	task_struct[TASK1MS].task_flag = TASK_CLEAR_FLAG;
-	vdcctrl();
+	vdcctrl();  //母线电压控制   还要再仔细看一下
 	//PhaseUnbalanceProtect();
-	CrtDetectProtect();
+	CrtDetectProtect();  //电流错误检测
 }
 
 void task2msCtrl(void)
@@ -158,9 +158,9 @@ void task2msCtrl(void)
 	_iq tooth_trq = 0;
 	
 	task_struct[TASK2MS].task_flag = TASK_CLEAR_FLAG;
-	spdCmdConfig();//先不用管
-	trqCmdConfig();//先不用管
-	speedlooplmtcond();//转速限速模块    吴
+	spdCmdConfig();   //速度环参数选择，根据速度命令源给定参数，目前只有根据CAN的参数来源
+	trqCmdConfig();   //力矩环参数选择，根据力矩命令源给定参数，来自AI或者CAN，AI根据是否需要限速
+	speedlooplmtcond();//转速限速模块，    删除
 	zero_stationcond();//驻坡模块        田
 	if(1 == zero_station_trqCmd_flag)
 	{  

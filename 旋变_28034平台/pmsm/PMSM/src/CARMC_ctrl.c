@@ -172,7 +172,7 @@ void sub_adc_handler(void)
 	LPFilter(sysFbkPara.Iq_fbk,&sysFbkPara.Iq_fbk_filter_0025,_IQ(0.0025),_IQ(0.9975));
 #endif
 
-	if(LimitI2CUpdate_en)
+	if(LimitI2CUpdate_en)   //写入eeprom的数据
 	{
 		Temp  = abs(_IQmpy(sysFbkPara.Iu_fbk_real,SysBase.iphase));
 		if(I2CValueLimit_Record.field.iu < Temp)

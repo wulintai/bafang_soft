@@ -15,7 +15,7 @@ void trqLoopInput(void)
 {
 	if(MTR_TRQ_LOOP == scsw2.field.runLoop_state)//Á¦¾Ø»·
 	{
-		if(1 == zero_station_trqCmd_flag)
+		if(1 == zero_station_trqCmd_flag)   //É¾³ý
 		{
 			trqLoop_trqCmd = zero_station_trqCmd;
 		}
