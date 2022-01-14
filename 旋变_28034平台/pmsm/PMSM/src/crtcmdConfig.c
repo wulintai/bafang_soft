@@ -9,7 +9,7 @@ void ctrcmdConfigslowin(void)
 {
 	crtCmd_vars.runLoop_state 	            = scsw2.field.runLoop_state; //:0:电压环 1：电流环 2：力矩环  3：速度环
 	crtCmd_vars.weak_mode                   = EV_MCU_Para.field.Weak_enable;//:0:不自动弱磁 1：查表自动弱磁 2：固定电压利用率弱磁  3：固定电压电动弱磁
-	crtCmd_vars.diagState                   = diagState;
+	crtCmd_vars.diagState                   = diagState;//自学习状态
 	
 	//Is current
 	crtCmd_vars.IsMTPACmd_man               = _IQ15toIQ(sysCfgPara.IsCmd_man);

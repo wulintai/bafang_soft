@@ -402,26 +402,26 @@ void task2msCtrl(void)
 		
 		trqLoopInput();  //力矩环参数设置
 		trqLoopCtrl();   //力矩环控制-计算值传入力矩环
-		trqLoopOutput();
+		trqLoopOutput(); //没怎么用到
 	}
 	if((scsw2.field.runLoop_state >= MTR_CURRENT_LOOP)  //电流环
 	 &&(1 == scsw2.field.igbt_state))
 	{
-		ctrcmdConfigslowin();
-		weakcrtLoopslowin();
-		crtcmdConfigout();
-		mtrfwdslowin();
-		crtLoopslowInput();
-		crtLoopOutput();
+		ctrcmdConfigslowin();     //电流环参数
+		weakcrtLoopslowin();      //弱磁参数
+		crtcmdConfigout();        //空
+		mtrfwdslowin();           //参数
+		crtLoopslowInput();       //电流参数
+		crtLoopOutput();          //输出参数
 	}
 	if(1 == scsw2.field.igbt_state)    //电压环
 	{
 		voltLoopslowInput();
 	}
-	IGBT_Ctrl();
-	trqFeedback();
-	OverLoad_faultDetect();
-	FaultProcess();
+	IGBT_Ctrl();                //逆变器控制
+	trqFeedback();              //trqLoopPara.Torque_fbk_HMI   力矩反馈参数
+	OverLoad_faultDetect();     //过载故障检测
+	FaultProcess();             //12V弱点故障处理
 }
 
 void task5msCtrl(void)//庄
@@ -475,11 +475,11 @@ void taskGetVehicleIoState(void)        //读io状态  吴
 void task10msCtrl(void)
 {
 	task_struct[TASK10MS].task_flag = TASK_CLEAR_FLAG;
-	eeprom_Process();       //李
-	taskGetVehicleIoState();        //吴
-	AIFeedback();        //吴
-	diagIO();        //吴
-	if((1 == EV_MCU_Para.field.Error_rest)
+	eeprom_Process();          //李
+	taskGetVehicleIoState();   //吴 读IO状态
+	AIFeedback();              //吴 油门反馈
+	diagIO();                  //吴 给出力矩参数  sysCfgPara.TrqCmd_AI -> 力矩环
+	if((1 == EV_MCU_Para.field.Error_rest)   //错误重置
 	 &&(0 == sccw1.field.run_enable))
 	{
 		emsw.wValue   					= 0;							/*~{N^9JUO~}*/
@@ -495,14 +495,14 @@ void task10msCtrl(void)
 	    EV_MCU_Para.field.Error_rest    = 0;
 	}
 
-	errordisplay();
+	errordisplay(); //空
 }
 
 void task20msCtrl(void)
 {
 	
 	task_struct[TASK20MS].task_flag = TASK_CLEAR_FLAG;
-	v12Feedback();
+	v12Feedback();       //12V的反馈
 #if 0
 	PWM_Period_lowspeed = EV_MCU_Para.field.PWM_Period_Swap_speed;
 	PWM_Period_highspeed = EV_MCU_Para.field.PWM_Period_Swap_speed+_IQtoIQ15(_IQmpyI32(500,SysBase.invspeed));
@@ -548,17 +548,17 @@ void task20msCtrl(void)
 void task50msCtrl(void)
 {
 	task_struct[TASK50MS].task_flag = TASK_CLEAR_FLAG;
-	tempFeedback();
-	hmi_display();
+	tempFeedback();     //温度反馈
+	hmi_display();      //参数反馈 通过CAN传输
 }
 
 void task100msCtrl(void)
 {
 	task_struct[TASK100MS].task_flag = TASK_CLEAR_FLAG;
-	if((1 == EV_MCU_Para.field.Protect_OvLdFlag)
-	 &&(1 == first_adCalib_state_finsh))
+	if((1 == EV_MCU_Para.field.Protect_OvLdFlag)     //过载保护标志
+	 &&(1 == first_adCalib_state_finsh))             //第一次AD校验完成
 	{
-		if(5 == OvLdTimeCnt)
+		if(5 == OvLdTimeCnt)                         //过载计数=5
 		{
 			 Frq_Real = sysFbkPara.Speed_abs*10;
 		     InvOverLoadProtect();
@@ -605,7 +605,7 @@ void task500msCtrl(void)
 	static Uint16 uscnt = 0;
 	
 	task_struct[TASK500MS].task_flag = TASK_CLEAR_FLAG;
-	if(GpioDataRegs.GPBDAT.bit.GPIO34 == 1)
+	if(GpioDataRegs.GPBDAT.bit.GPIO34 == 1)                  //LED灯
 	{
 		GpioDataRegs.GPBCLEAR.bit.GPIO34 = 1; //OFF 500ms
 		uscnt = 0;
@@ -636,7 +636,7 @@ void hmi_display(void)
 
 	sysFbkPara.Power_ele_fbk = _IQmpy(sysFbkPara.Id_fbk_filter_0025,SysBase.iphase)*_IQ15mpy(voltLoopPara.Vd_ref_HMI,SysBase.udc)+
 		                               _IQmpy(sysFbkPara.Iq_fbk_filter_0025,SysBase.iphase)*_IQ15mpy(voltLoopPara.Vq_ref_HMI,SysBase.udc);
-	temp                        = sysFbkPara.Power_ele_fbk*SysBase.inviphase; //???~{!B~}?~{(4~}??~{!@(*~}??????
+	temp                        = sysFbkPara.Power_ele_fbk*SysBase.inviphase;
 	temp                        = temp/_IQ15mpy(sysCfgPara.Vdc_HMI,SysBase.udc);
 	sysFbkPara.Idc_fbk_filter = temp;
 

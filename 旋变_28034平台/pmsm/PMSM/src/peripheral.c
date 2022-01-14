@@ -47,27 +47,27 @@ void IGBT_Clock(void)
 
 void IGBT_Ctrl(void)
 {
-	if ((1 == sccw2.field.run_flag)
-	  &&(1 == scsw2.field.adCalib_state_finsh))
+	if ((1 == sccw2.field.run_flag)                //需要打开逆变器
+	  &&(1 == scsw2.field.adCalib_state_finsh))    //AD校验完成
 	{
-		if (0 == scsw2.field.igbt_state)
+		if (0 == scsw2.field.igbt_state)           //逆变器未打开
 		{
-			IGBT_ON();
-			if(0 == IGBT_Clock_Enable)
+			IGBT_ON();                             //打开逆变器
+			if(0 == IGBT_Clock_Enable)             //逆变器时钟未使能 - 逆变器未打开
 			{
 				scsw2.field.igbt_state		= 1;
-				FaultI2CIGBT_flag           = 1;
-				ClearCtrlLoopPara();
-				ClearManualCtrlCmd();				
+				FaultI2CIGBT_flag           = 1;   //电压写入I2C标志
+				ClearCtrlLoopPara();               //清除各环参数
+				ClearManualCtrlCmd();              //清除控制参数
 			}
 		}
 	}
 	else
 	{
-		IGBT_OFF();
-		scsw2.field.igbt_state = 0;
-		ClearCtrlLoopPara();
-		ClearManualCtrlCmd();				
+		IGBT_OFF();                                //关闭逆变器
+		scsw2.field.igbt_state = 0;                //逆变器状态未关
+		ClearCtrlLoopPara();                       //清除各环参数
+		ClearManualCtrlCmd();			           //清除控制参数
 	}
 }
 
@@ -138,7 +138,7 @@ void IGBT_ON(void)
 	{
 		IGBT_Clock_Enable = 0;
 		asm("	rpt		#250	|| nop");
-		EPWM_Enable();
+		EPWM_Enable();           //使能PWM输出
 	}
 }
 
