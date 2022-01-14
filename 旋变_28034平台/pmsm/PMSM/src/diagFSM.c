@@ -17,7 +17,7 @@ void diagFSMInit(void)
 	{
 		switch (i)
 		{
-			case DIAG_NON_TEST://¡À¡ê¨¢?
+			case DIAG_NON_TEST://
 				diagFSMState[i].cond        = &diagNonTestCond;
 				diagFSMState[i].action      = &diagNonTestAct;
 				diagFSMState[i].entrance    = &diagNonTestEntrance;

@@ -41,44 +41,44 @@ void sysFSMInit()
 			break;
 		case SYS_SPDLMT:   //限速
 			sysFSMState[i].cond=&sysSpdLmtCond;  //限速判断
-			sysFSMState[i].action=&sysSpdLmtAct; //
-			sysFSMState[i].entrance=&sysSpdLmtEntrance;
-			sysFSMState[i].export=&sysSpdLmtExport;
+			sysFSMState[i].action=&sysSpdLmtAct; //设置限速命令值并设为速度环
+			sysFSMState[i].entrance=&sysSpdLmtEntrance;//设置运行状态和系统状态
+			sysFSMState[i].export=&sysSpdLmtExport;  //设为力矩环，设置力矩值
 			break;
 		case SYS_ZEROSTOP: //驻坡
-			sysFSMState[i].cond=&sysZeroStopCond;
-			sysFSMState[i].action=&sysZeroStopAct;
-			sysFSMState[i].entrance=&sysZeroStopEntrance;
-			sysFSMState[i].export=&sysZeroStopExport;
+			sysFSMState[i].cond=&sysZeroStopCond;//驻坡判断
+			sysFSMState[i].action=&sysZeroStopAct;//设置驻坡力矩、判断驻坡长度
+			sysFSMState[i].entrance=&sysZeroStopEntrance;//驻坡初始化
+			sysFSMState[i].export=&sysZeroStopExport;//设置参数
 			break;
 		case SYS_POWERDOWN://下电
-			sysFSMState[i].cond=&sysPowerdownCond;
-			sysFSMState[i].action=&sysPowerdownAct;
-			sysFSMState[i].entrance=&sysPowerdownEntrance;
-			sysFSMState[i].export=&sysPowerdownExport;
+			sysFSMState[i].cond=&sysPowerdownCond;//下电判断
+			sysFSMState[i].action=&sysPowerdownAct;//关闭逆变器、设为力矩环
+			sysFSMState[i].entrance=&sysPowerdownEntrance;//设置参数
+			sysFSMState[i].export=&sysPowerdownExport;//检测欠压故障
 			break;
-		case SYS_DIAGNOSIS://自检
-			sysFSMState[i].cond= &sysDiagnosisCond;
-			sysFSMState[i].action= &sysDiagnosisAct;
-			sysFSMState[i].entrance= &sysDiagnosisEntrance;
-			sysFSMState[i].export= &sysDiagnosisExport;
+		case SYS_DIAGNOSIS://自学习
+			sysFSMState[i].cond= &sysDiagnosisCond;//自学习判断 return！
+			sysFSMState[i].action= &sysDiagnosisAct;//进入自学习状态机
+			sysFSMState[i].entrance= &sysDiagnosisEntrance;//同初始化的参数设置
+			sysFSMState[i].export= &sysDiagnosisExport;//设置系统参数
 			break;
 		case SYS_FAULT:    //故障
-			sysFSMState[i].cond=&sysFaultCond;
-			sysFSMState[i].action=&sysFaultAct;
-			sysFSMState[i].entrance=&sysFaultEntrance;
-			sysFSMState[i].export=&sysFaultExport;
+			sysFSMState[i].cond=&sysFaultCond;//故障状态、故障状态
+			sysFSMState[i].action=&sysFaultAct;//错误处理
+			sysFSMState[i].entrance=&sysFaultEntrance;//设置系统状态
+			sysFSMState[i].export=&sysFaultExport;//不允许恢复故障
 			break;
 		case SYS_UDCLOOP:  //电压环
-			sysFSMState[i].cond=&sysUdcloopCond;
-			sysFSMState[i].action=&sysUdcloopAct;
-			sysFSMState[i].entrance=&sysUdcloopEntrance;
-			sysFSMState[i].export=&sysUdcloopExport;
+			sysFSMState[i].cond=&sysUdcloopCond;//电压环判断
+			sysFSMState[i].action=&sysUdcloopAct;//设置参数
+			sysFSMState[i].entrance=&sysUdcloopEntrance;//参数设置
+			sysFSMState[i].export=&sysUdcloopExport;//清除电压闭环状态
 			break;
 		default:           //默认
 			sysFSMState[i].cond=&sysPowerdownCond;
 			sysFSMState[i].action=&sysPowerdownAct;
-			sysFSMState[i].entrance=&sysPowerdownEntrance;
+			sysFSMState[i].entrance=&sysPowerdownEntrance;//下电
 			sysFSMState[i].export=&sysPowerdownExport;
 			break;
 		}
@@ -224,10 +224,10 @@ void sysRunExport()
 int sysUdcloopCond()
 {
 	if(
-	sccw1.field.run_enable 	  && !scsw2.field.fault_flag
-	&& !sccw1.field.shutoff	  && !sccw2.field.diag_enable
-	&& !scsw2.field.zero_state && !scsw2.field.SpdLmt_state
-	&& scsw2.field.Udcloop_state
+	sccw1.field.run_enable 	  && !scsw2.field.fault_flag         //逆变器打开&&无故障
+	&& !sccw1.field.shutoff	  && !sccw2.field.diag_enable        //上电&&未进入自学习
+	&& !scsw2.field.zero_state && !scsw2.field.SpdLmt_state      //不驻坡&&未限速
+	&& scsw2.field.Udcloop_state                                 //电压环
 	)
 	{
 		return 1;
@@ -271,9 +271,9 @@ void sysUdcloopAct()
 
 void sysUdcloopEntrance()
 {
-	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;
-	sccw2.field.run_enable      = sccw1.field.run_enable;
-	scsw1.field.system_state	= SYS_UDCLOOP;
+	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;                //设为力矩环
+	sccw2.field.run_enable      = sccw1.field.run_enable;      //逆变器状态
+	scsw1.field.system_state	= SYS_UDCLOOP;                 //电压闭环
 	sysState					= SYS_UDCLOOP;
 	//pidreg3_init(&pid_udcloop);
 	//udcloop.udcloop_trqCmd      = pid_udcloop.Ui              = trqLoop_trqRampref;
@@ -413,19 +413,19 @@ void sysSpdLmtAct()
 }
 void sysSpdLmtEntrance()
 {
-	sccw2.field.run_enable     = sccw1.field.run_enable;
-	sccw2.field.runLoop_mode   = MTR_SPEED_LOOP;
+	sccw2.field.run_enable     = sccw1.field.run_enable;   //逆变器状态
+	sccw2.field.runLoop_mode   = MTR_SPEED_LOOP;           //设为速度环
 	scsw1.field.system_state	= SYS_SPDLMT;
 	sysState					= SYS_SPDLMT;
 }
 
 void sysSpdLmtExport()
 {
-	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;
-	scsw2.field.SpdLmt_state    = 0;
+	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;            //设为力矩环
+	scsw2.field.SpdLmt_state    = 0;                       //清除限速标志位
 
-	sysCfgPara.TrqCmd_AIfilter = sysCfgPara.TrqCmd_AI = trqLoop_trqRampref;
-	up_step = down_step = _IQmpy(_IQ(0.01),SysBase.invtorque);
+	sysCfgPara.TrqCmd_AIfilter = sysCfgPara.TrqCmd_AI = trqLoop_trqRampref;     //设定力矩值
+	up_step = down_step = _IQmpy(_IQ(0.01),SysBase.invtorque);                  //设置最小上升\下降步长
 }
 
 
@@ -433,9 +433,9 @@ void sysSpdLmtExport()
 int sysZeroStopCond()
 {
 	if (
-		sccw1.field.run_enable 	  && !scsw2.field.fault_flag
-		&& !sccw1.field.shutoff	  && !sccw2.field.diag_enable
-		&& scsw2.field.zero_state && !scsw2.field.SpdLmt_state
+		sccw1.field.run_enable 	  && !scsw2.field.fault_flag         //逆变器打开&&无故障
+		&& !sccw1.field.shutoff	  && !sccw2.field.diag_enable        //上电状态&&未自学习
+		&& scsw2.field.zero_state && !scsw2.field.SpdLmt_state       //驻坡&&未限速
 		)
 	{
 		return 1;
@@ -452,15 +452,15 @@ void sysZeroStopAct()
 	_iq speed_exit_max = 0;
 
 	//tooth_trq = _IQ15toIQ(EV_MCU_Para.field.Tooth_trq);
-	speed_exit_max = _IQmpyI32(100,SysBase.invspeed);
-	if(2 == Vehicle_cmd.cmdmode.data.gear_state)
+	speed_exit_max = _IQmpyI32(100,SysBase.invspeed);  //速度阈值100转
+	if(2 == Vehicle_cmd.cmdmode.data.gear_state)       //后退档
 	{
-		speed_exit_max = 0-speed_exit_max;
+		speed_exit_max = 0-speed_exit_max;             //负值
 	}
-	LPFilter(SpeedCal_spdFbk,&zero_station_SpeedCal_spdFbk,_IQ(0.5),_IQ(0.5));
-	if(0 == VCU_IOstate.field.zero_or_start_flag)
+	LPFilter(SpeedCal_spdFbk,&zero_station_SpeedCal_spdFbk,_IQ(0.5),_IQ(0.5));       //速度滤波
+	if(0 == VCU_IOstate.field.zero_or_start_flag)      //非驻坡启动
 	{
-		if(1 == VCU_IOstate.field.exit_zero_add_trq_flag)
+		if(1 == VCU_IOstate.field.exit_zero_add_trq_flag)   //离开驻坡需要增加力矩=1
 		{
 			if(pid_station.Ref>speed_exit_max)
 			{
@@ -468,7 +468,7 @@ void sysZeroStopAct()
 				if(pid_station.Ref<=speed_exit_max)
 				{
 					pid_station.Ref = speed_exit_max;
-					VCU_IOstate.field.exit_zero_add_trq_flag = 2;
+					VCU_IOstate.field.exit_zero_add_trq_flag = 2;   //离开驻坡需要增加力矩标志=2
 				}
 			}
 			else if(pid_station.Ref<speed_exit_max)
@@ -482,12 +482,12 @@ void sysZeroStopAct()
 			}
 			else
 			{
-				VCU_IOstate.field.exit_zero_add_trq_flag = 2;
+				VCU_IOstate.field.exit_zero_add_trq_flag = 2;                         //设置pid_station.Ref  设置VCU_IOstate.field.exit_zero_add_trq_flag = 2
 			}
 		}
-		else
+		else  //离开驻坡需要增加力矩=0
 		{
-			if(pid_station.Ref>0)
+			if(pid_station.Ref>0)    //设置pid_station.Ref
 			{
 				pid_station.Ref = pid_station.Ref-zero_speed_step;
 				if(pid_station.Ref<0)
@@ -505,7 +505,7 @@ void sysZeroStopAct()
 			}
 		}
 	}
-	else
+	else//驻坡启动
 	{
 		if(pid_station.Ref>speed_start_up)
 		{
@@ -527,23 +527,23 @@ void sysZeroStopAct()
 		}
 		else
 		{
-			Vehicle_cmd.cmdmode.data.gear_swap_trq_flag = 0;
+			Vehicle_cmd.cmdmode.data.gear_swap_trq_flag = 0;                                  //设置pid_station.Ref  设置驱动
 		}
 	}
 
-	pid_station.Fdb       		= zero_station_SpeedCal_spdFbk;
-	if(0 == VCU_IOstate.field.zero_or_start_flag)
+	pid_station.Fdb       		= zero_station_SpeedCal_spdFbk;    //没用
+	if(0 == VCU_IOstate.field.zero_or_start_flag)           //非驻坡启动
 	{
-		pid_station.Kp		  		= _IQ12toIQ(EV_MCU_Para.field.Zero_Sation_kp);  //IQ12
-		pid_station.Ki			  	= _IQ12toIQ(EV_MCU_Para.field.Zero_Sation_ki);
+		pid_station.Kp		  		= _IQ12toIQ(EV_MCU_Para.field.Zero_Sation_kp);  //25000 驻坡比例
+		pid_station.Ki			  	= _IQ12toIQ(EV_MCU_Para.field.Zero_Sation_ki);  //200   驻坡积分
 	}
 	else
 	{
-		pid_station.Kp		  		= _IQ12toIQ(EV_MCU_Para.field.EliJitter_Stop_Kp);  //IQ12
-		pid_station.Ki			  	= _IQ12toIQ(EV_MCU_Para.field.EliJitter_Stop_Kd);
+		pid_station.Kp		  		= _IQ12toIQ(EV_MCU_Para.field.EliJitter_Stop_Kp);//5000 防抖比例
+		pid_station.Ki			  	= _IQ12toIQ(EV_MCU_Para.field.EliJitter_Stop_Kd);//10   防抖微分？？
 	}
 	pid_station.Kd            	= 0;
-	pid_station.Out_fwd         = 0;
+	pid_station.Out_fwd         = 0;     //没用
 
 #if 0
 	if(1 == Vehicle_cmd.cmdmode.data.gear_state)//前进档
@@ -571,24 +571,24 @@ void sysZeroStopAct()
 		pid_station.OutMin		  	= -trqLoopPara.Max_TorqueEle;
 	}
 #else
-	pid_station.OutMax		  	= trqLoopPara.Max_TorqueEle;  //IQ12
-	pid_station.OutMin		  	= -trqLoopPara.Max_TorqueEle;
+	pid_station.OutMax		  	= trqLoopPara.Max_TorqueEle;  //150 最大电动扭矩
+	pid_station.OutMin		  	= -trqLoopPara.Max_TorqueEle; //-150 -最大电动扭矩
 #endif
 	pidreg3_calc(&pid_station);
-	if(0 == VCU_IOstate.field.zero_or_start_flag)
+	if(0 == VCU_IOstate.field.zero_or_start_flag)    //非驻坡启动
 	{
-		LPFilter(pid_station.Out,&zero_station_trqCmd,_IQ(0.5),_IQ(0.5));
+		LPFilter(pid_station.Out,&zero_station_trqCmd,_IQ(0.5),_IQ(0.5));   //设置驻坡力矩值  pid_station.Out->zero_station_trqCmd->力矩环
 	}
-	else
+	else   //驻坡启动
 	{
 		LPFilter(pid_station.Out,&zero_station_trqCmd,_IQ(0.1),_IQ(0.9));
 	}
 
-	sccw2.field.run_enable      = sccw1.field.run_enable;
-	sccw1.field.runLoop_mode 	= MTR_TRQ_LOOP;
-    sysCfgPara.TrqCmd  			= zero_station_trqCmd;
+	sccw2.field.run_enable      = sccw1.field.run_enable;     //逆变器状态
+	sccw1.field.runLoop_mode 	= MTR_TRQ_LOOP;               //力矩环
+    sysCfgPara.TrqCmd  			= zero_station_trqCmd;        //将驻坡力矩值传入力矩环
 
-	if(1 == VCU_IOstate.field.zero_disable_flag)
+	if(1 == VCU_IOstate.field.zero_disable_flag)              //关闭驻坡
 	{
 		zero_station_deltaTheta     = SpeedCal_deltaTheta;
 		if(MOTOR_CLOCKWISE == EV_MCU_Para.field.Motor_Direction)
@@ -597,15 +597,15 @@ void sysZeroStopAct()
 		}
 		zero_station_deltaThetasum = zero_station_deltaThetasum+zero_station_deltaTheta;
 		
-		if(1 == Vehicle_cmd.cmdmode.data.gear_state)
+		if(1 == Vehicle_cmd.cmdmode.data.gear_state)          //前进档
 		{
-			if(zero_station_deltaThetasum < -_IQ(1.0)*EV_MCU_Para.field.Zero_Sation_lengthlmt)
+			if(zero_station_deltaThetasum < -_IQ(1.0)*EV_MCU_Para.field.Zero_Sation_lengthlmt)     //驻坡长度10
 	        {
 				sysCfgPara.TrqCmd            = 0;
-				emsw2.field.zerostaion_error = 1;
+				emsw2.field.zerostaion_error = 1;             //驻坡出错
 	        }
 		}
-		else if(2 == Vehicle_cmd.cmdmode.data.gear_state)
+		else if(2 == Vehicle_cmd.cmdmode.data.gear_state)     //后退档
 		{
 			if(zero_station_deltaThetasum > _IQ(1.0)*EV_MCU_Para.field.Zero_Sation_lengthlmt)
 			{
@@ -618,28 +618,28 @@ void sysZeroStopAct()
 
 void sysZeroStopEntrance()
 {
-	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;
-	sccw2.field.run_enable      = sccw1.field.run_enable;
-	scsw1.field.system_state	= SYS_ZEROSTOP;
+	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;                            //力矩环
+	sccw2.field.run_enable      = sccw1.field.run_enable;                  //逆变器状态
+	scsw1.field.system_state	= SYS_ZEROSTOP;                            //驻坡状态
 	sysState					= SYS_ZEROSTOP;
-	zero_station_SpeedCal_spdFbk= SpeedCal_spdFbk;
+	zero_station_SpeedCal_spdFbk= SpeedCal_spdFbk;                         //设置速度
 	//zero_station_deltaTheta     = SpeedCal_deltaTheta;
-	zero_station_deltaThetasum  = 0;
-	pidreg3_init(&pid_station);
-	zero_station_trqCmd         = pid_station.Ui   = pid_station.Out = trqidqmap_trq;//IQ24
-	diff_trq_filter = diff_stop_trq_filter = 0;
-	zero_station_trqLmt = trqidqmap_trq;
-	zero_speed_step = _IQmpyI32(1,SysBase.invspeed);
-	pid_station.Ref = sysFbkPara.Speed_fbk_Filter;//IQ24
-	if(1 == Vehicle_cmd.cmdmode.data.gear_state)
+	zero_station_deltaThetasum  = 0;                                       //驻坡距离
+	pidreg3_init(&pid_station);                                            //参数清零
+	zero_station_trqCmd         = pid_station.Ui   = pid_station.Out = trqidqmap_trq;//参数初始化
+	diff_trq_filter = diff_stop_trq_filter = 0;                            //未用到
+	zero_station_trqLmt = trqidqmap_trq;                                   //驻坡限制力矩
+	zero_speed_step = _IQmpyI32(1,SysBase.invspeed);                       //驻坡速度步长
+	pid_station.Ref = sysFbkPara.Speed_fbk_Filter;                         //参考输入=速度
+	if(1 == Vehicle_cmd.cmdmode.data.gear_state)                           //前进档
 	{
-		if(sysFbkPara.Speed_fbk_Filter<0)
+		if(sysFbkPara.Speed_fbk_Filter<0)     //速度<0
 		{
-			speed_start_up = _IQmpyI32(50,SysBase.invspeed);
+			speed_start_up = _IQmpyI32(50,SysBase.invspeed);   //启动速度=50
 		}
 		else
 		{
-			speed_start_up = sysFbkPara.Speed_fbk_Filter+_IQmpyI32(50,SysBase.invspeed);
+			speed_start_up = sysFbkPara.Speed_fbk_Filter+_IQmpyI32(50,SysBase.invspeed);  //启动速度=原速度+50
 		}
 	}
 	else
@@ -658,19 +658,19 @@ void sysZeroStopEntrance()
 
 void sysZeroStopExport()
 {
-	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;
-	scsw2.field.zero_state    	= 0;
-	zero_station_deltaThetasum  = 0;
+	sccw2.field.runLoop_mode 	= MTR_TRQ_LOOP;      //力矩环
+	scsw2.field.zero_state    	= 0;                 //不驻坡
+	zero_station_deltaThetasum  = 0;                 //溜坡距离=0
 
-	sysCfgPara.TrqCmd_AIfilter = sysCfgPara.TrqCmd_AI = trqLoop_trqRampref;
+	sysCfgPara.TrqCmd_AIfilter = sysCfgPara.TrqCmd_AI = trqLoop_trqRampref;//设置力矩值
 }
 
 //系统下电
 int sysPowerdownCond()
 {
-	if (!sccw1.field.fault_diague && !scsw2.field.fault_flag
-		&& sccw1.field.shutoff    && !sccw1.field.acdc_state
-		&&!sccw2.field.diag_enable)
+	if (!sccw1.field.fault_diague && !scsw2.field.fault_flag   //自学习未出错&&未故障
+		&& sccw1.field.shutoff    && !sccw1.field.acdc_state   //下电标志&&电压未闭环
+		&&!sccw2.field.diag_enable)                            //电机未自学习
 	{
 		return 1;
 	}
@@ -678,27 +678,27 @@ int sysPowerdownCond()
 }
 void sysPowerdownAct()
 {
-	sccw2.field.run_flag=0;
-   	sccw2.field.runLoop_mode=MTR_TRQ_LOOP;
+	sccw2.field.run_flag=0;                            //逆变器关闭
+   	sccw2.field.runLoop_mode=MTR_TRQ_LOOP;             //力矩环
 }
 
 void sysPowerdownEntrance()
 {
-	sccw2.field.lv_check=0;
-	scsw1.field.system_state	= SYS_POWERDOWN;
+	sccw2.field.lv_check=0;                                   //不检测欠压故障
+	scsw1.field.system_state	= SYS_POWERDOWN;              //设置系统状态
 	sysState=SYS_POWERDOWN;
 }
 
 void sysPowerdownExport()
 {
-	sccw2.field.lv_check=1;
+	sccw2.field.lv_check=1;                                   //检测欠压故障
 }
 
 
 //系统故障状态
 int sysFaultCond()
 {
-	if (scsw2.field.fault_flag)
+	if (scsw2.field.fault_flag)             //故障状态标志
 	{
 		return 1;
 	}
@@ -710,22 +710,22 @@ int sysFaultCond()
 
 void sysFaultAct()
 {
-	if((scsw2.field.error_rank == 4) || (sysFbkPara.Speed_abs<700))
+	if((scsw2.field.error_rank == 4) || (sysFbkPara.Speed_abs<700))         //错误等级=4||速度<700
 	{
-		sccw2.field.run_enable		= 0;
+		sccw2.field.run_enable		= 0;    //逆变器关闭
 	}
 	else
 	{
-		sccw2.field.run_enable		= sccw1.field.run_enable;
+		sccw2.field.run_enable		= sccw1.field.run_enable;  //逆变器状态
 	}
 
-	if(emsw.field.hv_fault)
+	if(emsw.field.hv_fault)   //高压故障
 	{
 		scsw1.field.fault_state=0;            //0:不允许恢复故障
 	}
 	else
 	{
-		if(sccw1.field.run_enable || scsw2.field.igbt_state)
+		if(sccw1.field.run_enable || scsw2.field.igbt_state)   //逆变器打开
 		{
 			scsw1.field.fault_state=0;        //0:不允许恢复故障
 		}
@@ -735,9 +735,9 @@ void sysFaultAct()
 			scsw1.field.fault_state=0;        //1:允许恢复
 		}
 	}
-	sccw2.field.fault_recover=scsw1.field.fault_state;
-	FaultTrqLmtCoeff = 0;
-	sccw2.field.runLoop_mode=MTR_TRQ_LOOP;
+	sccw2.field.fault_recover=scsw1.field.fault_state;  //故障恢复
+	FaultTrqLmtCoeff = 0;    //外部故障限制扭矩系数
+	sccw2.field.runLoop_mode=MTR_TRQ_LOOP;  //设为力矩环
 }
 
 void sysFaultEntrance()
@@ -754,8 +754,8 @@ void sysFaultExport()
 //自学习
 int sysDiagnosisCond()
 {
-	if(	sccw2.field.diag_enable && !scsw2.field.fault_flag
-		&&scsw2.field.vdc_state) //
+	if(	sccw2.field.diag_enable && !scsw2.field.fault_flag       //进入自学习状态&&无故障
+		&&scsw2.field.vdc_state) //                              //预充电状态
 	{
 		return(1);
 	}
@@ -764,19 +764,19 @@ int sysDiagnosisCond()
 void sysDiagnosisAct()
 {
 	//diagEncoffsetVar.finshflag = 1;//test
-	diagFSMCtrl();
+	diagFSMCtrl();            //自学习状态机
 }
 void sysDiagnosisEntrance()
 {
-	ClearManualCtrlCmd();                           // 清除人工命令给定
+	ClearManualCtrlCmd();                           //清除人工命令给定
 	sccw2.field.fault_recover = 0;			        //不允许恢复故障
-	sccw1.field.run_enable = 0;
-	sccw2.field.run_enable = 0;
-	scsw1.field.system_state  	= SYS_DIAGNOSIS;
+	sccw1.field.run_enable = 0;                     //逆变器关闭
+	sccw2.field.run_enable = 0;                     //逆变器关闭
+	scsw1.field.system_state  	= SYS_DIAGNOSIS;    //设置系统状态
 	sysState                    = SYS_DIAGNOSIS;
 
-	diagFSM_runLoopModeOld       = scsw2.field.runLoop_state;
-	diagFSM_thetaModeOld         = sccw2.field.theta_mode;
+	diagFSM_runLoopModeOld       = scsw2.field.runLoop_state;     //运行环
+	diagFSM_thetaModeOld         = sccw2.field.theta_mode;        //自学习角度来源
 }
 
 void sysDiagnosisExport()

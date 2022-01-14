@@ -9,52 +9,52 @@ void spdLoopInput(void)
 	
 	if (MTR_SPEED_LOOP == scsw2.field.runLoop_state)//速度环控制
 	{
-		spdLoop_spdCmd	= sysCfgPara.SpdCmd;
+		spdLoop_spdCmd	= sysCfgPara.SpdCmd;     //速度环控制值
 	}
 	else//非速度环控制
 	{
 		spdLoop_spdCmd  = 0;
 	}
-	spdLoop_spdMaxPos = _IQ15toIQ(EV_MCU_Para.field.Motor_Protect_OverSpdFwd);
-	spdLoop_spdMaxNeg = _IQ15toIQ(EV_MCU_Para.field.Motor_Protect_OverSpdRev);
-	spdLoop_StepCaltimeSlice = EV_MCU_Para.field.SpdLoop_StepCaltimeSlice;
-	spdLoop_mincalspdstep  = _IQ15toIQ(EV_MCU_Para.field.SpdLoop_Mincalspdstep);
-	if(2 == EV_MCU_Para.field.Weak_enable)
+	spdLoop_spdMaxPos = _IQ15toIQ(EV_MCU_Para.field.Motor_Protect_OverSpdFwd);   //正转转速上限6500
+	spdLoop_spdMaxNeg = _IQ15toIQ(EV_MCU_Para.field.Motor_Protect_OverSpdRev);   //反转转速上限6500
+	spdLoop_StepCaltimeSlice = EV_MCU_Para.field.SpdLoop_StepCaltimeSlice;       //28 速度环速度变化次数
+	spdLoop_mincalspdstep  = _IQ15toIQ(EV_MCU_Para.field.SpdLoop_Mincalspdstep); //减速最小步长
+	if(2 == EV_MCU_Para.field.Weak_enable)    //弱磁
 	{
-		spdLoop_trqupLimit			= _IQ15toIQ(EV_MCU_Para.field.Weak_iq_Limt);
-		spdLoop_trqdownLimit        = -_IQ15toIQ(EV_MCU_Para.field.Weak_iq_Limt);
+		spdLoop_trqupLimit			= _IQ15toIQ(EV_MCU_Para.field.Weak_iq_Limt); //iq电流限制 600
+		spdLoop_trqdownLimit        = -_IQ15toIQ(EV_MCU_Para.field.Weak_iq_Limt);//-600
 	}
 	else
 	{
-		tooth_trq = _IQ15toIQ(EV_MCU_Para.field.Tooth_trq);
-		if(1 == scsw2.field.SpdLmt_state)
+		tooth_trq = _IQ15toIQ(EV_MCU_Para.field.Tooth_trq);           //贴齿力矩
+		if(1 == scsw2.field.SpdLmt_state)                             //正向限速
 		{
-			spdLoop_trqupLimit			= trqLoopPara.Max_TorqueEle;
-			spdLoop_trqdownLimit        = tooth_trq;
+			spdLoop_trqupLimit			= trqLoopPara.Max_TorqueEle;  //力矩上限=最大电动力矩
+			spdLoop_trqdownLimit        = tooth_trq;                  //力矩下限=最大贴齿力矩
 		}
-		else if(2 == scsw2.field.SpdLmt_state)
+		else if(2 == scsw2.field.SpdLmt_state)                        //反向限速
 		{
-			spdLoop_trqupLimit			= -tooth_trq;
-			spdLoop_trqdownLimit        = -trqLoopPara.Max_TorqueGen;
+			spdLoop_trqupLimit			= -tooth_trq;                 //力矩上限=-最大贴齿力矩
+			spdLoop_trqdownLimit        = -trqLoopPara.Max_TorqueGen; //力矩下限=-最大电动力矩
 		}
-		else
+		else                                                          //非限速
 		{
-			spdLoop_trqupLimit			= trqLoopPara.Max_TorqueEle;
-			spdLoop_trqdownLimit        = -trqLoopPara.Max_TorqueGen;
+			spdLoop_trqupLimit			= trqLoopPara.Max_TorqueEle;  //力矩上限=最大电动力矩
+			spdLoop_trqdownLimit        = -trqLoopPara.Max_TorqueGen; //力矩上限=-最大发电力矩
 		}
 		//spdLoop_trqupLimit			= trqLoopPara.Max_TorqueEle;
 		//spdLoop_trqdownLimit        = -trqLoopPara.Max_TorqueGen;
 	}
-	if(DIAG_ENCODER_EXACT_OFFSET == diagState)
+	if(DIAG_ENCODER_EXACT_OFFSET == diagState)    //精确调整
 	{
-		spdLoopPara.Kp = _IQ12toIQ(EV_MCU_Para.field.Study_EncoderOffset_kp);
-		spdLoopPara.Ki = _IQ12toIQ(EV_MCU_Para.field.Study_EncoderOffset_ki);
+		spdLoopPara.Kp = _IQ12toIQ(EV_MCU_Para.field.Study_EncoderOffset_kp);   //35000
+		spdLoopPara.Ki = _IQ12toIQ(EV_MCU_Para.field.Study_EncoderOffset_ki);   //40
 		spdLoopPara.Kd = 0;
 		spdLoopPara.OutMax = _IQ(0.25);
 		spdLoopPara.OutMin = _IQ(0);
-		spdLoopPara.ErrMax = _IQ15toIQ(EV_MCU_Para.field.Speed_maxerr);
+		spdLoopPara.ErrMax = _IQ15toIQ(EV_MCU_Para.field.Speed_maxerr);         //速度超差1000
 		spdLoopPara.ErrMin = 0-spdLoopPara.ErrMax;
-		spdLoopPara.Study_EncoderOffset_is = _IQ15toIQ(exactTune.IsCmd_man);
+		spdLoopPara.Study_EncoderOffset_is = _IQ15toIQ(exactTune.IsCmd_man);    //没用到
 	}
 	else if(DIAG_MOTOR_FLUEX == diagState)
 	{
@@ -79,12 +79,12 @@ void spdLoopInput(void)
 		spdLoopPara.Study_EncoderOffset_is = 0;
 	}
 
-	spdLoopCalstep();
-	spdRamp();
+	spdLoopCalstep();   //计算速度变化步长
+	spdRamp();          //计算spdLoop_spdRef
 
 	spdLoopPara.Weak_enable = EV_MCU_Para.field.Weak_enable;
 	spdLoopPara.diagState = diagState;
-	spdLoopPara.spdLoop_spdRef = spdLoop_spdRef;
+	spdLoopPara.spdLoop_spdRef = spdLoop_spdRef;           //最终参数
 	spdLoopPara.Speed_fbk_Filter = sysFbkPara.Speed_fbk_Filter;
 }
 

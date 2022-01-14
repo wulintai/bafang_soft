@@ -384,27 +384,27 @@ void task2msCtrl(void)
 	}
 	//以上是驻坡模块
 
-	sysFSMCtrl();//状态机    李
-	mtrFSMCtrl();//状态机    李
-	trqLmt();//转矩限制  苏
-	trqLoscoeff();//转矩限制  苏
-	motorLookupOffsetTable();//
-	if((scsw2.field.runLoop_state>=MTR_SPEED_LOOP)
-	 &&(1 == scsw2.field.igbt_state))
+	sysFSMCtrl();            //系统状态机    李
+	mtrFSMCtrl();            //电机状态机    李
+	trqLmt();                //转矩限制      苏      仅设置参数、其余空
+	trqLoscoeff();           //转矩限制      苏      空
+	motorLookupOffsetTable();//电机编码器零偏查表计算
+	if((scsw2.field.runLoop_state>=MTR_SPEED_LOOP)   //速度环或者状态数
+	 &&(1 == scsw2.field.igbt_state))                //逆变器打开
 	{
-		spdLoopInput();
-		spdLoopCtrl(&spdLoopPara);
+		spdLoopInput();      //速度环参数设置
+		spdLoopCtrl(&spdLoopPara);  //速度环控制
 	}
-	if(scsw2.field.runLoop_state >= MTR_TRQ_LOOP 
+	if(scsw2.field.runLoop_state >= MTR_TRQ_LOOP     //力矩环
 	 &&(1 == scsw2.field.igbt_state))
 	{   
-		diff_deal();
+		diff_deal();  //空
 		
-		trqLoopInput();
-		trqLoopCtrl();
+		trqLoopInput();  //力矩环参数设置
+		trqLoopCtrl();   //力矩环控制-计算值传入力矩环
 		trqLoopOutput();
 	}
-	if((scsw2.field.runLoop_state >= MTR_CURRENT_LOOP)
+	if((scsw2.field.runLoop_state >= MTR_CURRENT_LOOP)  //电流环
 	 &&(1 == scsw2.field.igbt_state))
 	{
 		ctrcmdConfigslowin();
@@ -414,7 +414,7 @@ void task2msCtrl(void)
 		crtLoopslowInput();
 		crtLoopOutput();
 	}
-	if(1 == scsw2.field.igbt_state)
+	if(1 == scsw2.field.igbt_state)    //电压环
 	{
 		voltLoopslowInput();
 	}

@@ -19,34 +19,34 @@ void mtrFSMInit()
 		switch (i)
 		{
 		case MTR_SPEED_LOOP:
-			mtrFSMState[i].cond		= &mtrSpdLoopCond;
-			mtrFSMState[i].action	= &mtrSpdLoopAct;
-			mtrFSMState[i].entrance	= &mtrSpdLoopEntrance;
-			mtrFSMState[i].export	= &mtrSpdLoopExport;
+			mtrFSMState[i].cond		= &mtrSpdLoopCond;        //sccw2.field.runLoop_mode
+			mtrFSMState[i].action	= &mtrSpdLoopAct;         //sccw2.field.runLoop_mode=速度环、逆变器状态
+			mtrFSMState[i].entrance	= &mtrSpdLoopEntrance;    //速度环参数设置，设置系统状态
+			mtrFSMState[i].export	= &mtrSpdLoopExport;      //空
 			break;
 		case MTR_TRQ_LOOP:
-			mtrFSMState[i].cond		= &mtrTrqLoopCond;
-			mtrFSMState[i].action	= &mtrTrqLoopAct;
-			mtrFSMState[i].entrance	= &mtrTrqLoopEntrance;
-			mtrFSMState[i].export	= &mtrTrqLoopExport;
+			mtrFSMState[i].cond		= &mtrTrqLoopCond;        //sccw2.field.runLoop_mode
+			mtrFSMState[i].action	= &mtrTrqLoopAct;         //sccw2.field.runLoop_mode=力矩环、逆变器状态
+			mtrFSMState[i].entrance	= &mtrTrqLoopEntrance;    //速度环参数清零、设置系统状态
+			mtrFSMState[i].export	= &mtrTrqLoopExport;      //空
 			break;
 		case MTR_CURRENT_LOOP:
-			mtrFSMState[i].cond		= &mtrCurLoopCond;
-			mtrFSMState[i].action	= &mtrCurLoopAct;
-			mtrFSMState[i].entrance	= &mtrCurLoopEntrance;
-			mtrFSMState[i].export	= &mtrCurLoopExport;
+			mtrFSMState[i].cond		= &mtrCurLoopCond;        //sccw2.field.runLoop_mode
+			mtrFSMState[i].action	= &mtrCurLoopAct;         //sccw2.field.runLoop_mode=电流环、逆变器状态
+			mtrFSMState[i].entrance	= &mtrCurLoopEntrance;    //电流环参数清零、设置系统状态
+			mtrFSMState[i].export	= &mtrCurLoopExport;      //空
 			break;
 		case MTR_VOLT_LOOP:
-			mtrFSMState[i].cond		= &mtrVoltLoopCond;
-			mtrFSMState[i].action	= &mtrVoltLoopAct;
-			mtrFSMState[i].entrance	= &mtrVoltLoopEntrance;
-			mtrFSMState[i].export	= &mtrVoltLoopExport;
+			mtrFSMState[i].cond		= &mtrVoltLoopCond;       //sccw2.field.runLoop_mode
+			mtrFSMState[i].action	= &mtrVoltLoopAct;        //sccw2.field.runLoop_mode=电压环、逆变器状态
+			mtrFSMState[i].entrance	= &mtrVoltLoopEntrance;   //电流环参数清零、设置系统状态
+			mtrFSMState[i].export	= &mtrVoltLoopExport;     //空
 			break;
 		default:
-			mtrFSMState[i].cond		= &mtrTrqLoopCond;
-			mtrFSMState[i].action	= &mtrTrqLoopAct;
-			mtrFSMState[i].entrance	= &mtrTrqLoopEntrance;
-			mtrFSMState[i].export	= &mtrTrqLoopExport;
+			mtrFSMState[i].cond		= &mtrTrqLoopCond;        //sccw2.field.runLoop_mode = 力矩环
+			mtrFSMState[i].action	= &mtrTrqLoopAct;         //设为力矩环
+			mtrFSMState[i].entrance	= &mtrTrqLoopEntrance;    //速度环参数清零、设置系统状态
+			mtrFSMState[i].export	= &mtrTrqLoopExport;      //空
 			break;
 		}
 	}
@@ -92,7 +92,7 @@ int mtrSpdLoopCond()
 void mtrSpdLoopAct()
 {
 	scsw2.field.runLoop_state	= MTR_SPEED_LOOP;
-	sccw2.field.run_flag = sccw2.field.run_enable;
+	sccw2.field.run_flag = sccw2.field.run_enable;     //逆变器状态
 }
 
 void mtrSpdLoopEntrance()

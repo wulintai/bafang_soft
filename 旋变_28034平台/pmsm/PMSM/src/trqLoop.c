@@ -58,22 +58,22 @@ void trqLoopCtrl(void)
 {
 	if(MTR_TRQ_LOOP == scsw2.field.runLoop_state)//力矩环
 	{
-		if(SYS_ZEROSTOP == scsw1.field.system_state)
+		if(SYS_ZEROSTOP == scsw1.field.system_state)  //零位置力矩环
 		{
-			trqLoop_trqRampstep				=	_IQ15toIQ(EV_MCU_Para.field.Zero_Sation_Trq_Ramp);
+			trqLoop_trqRampstep				=	_IQ15toIQ(EV_MCU_Para.field.Zero_Sation_Trq_Ramp);  //10 驻坡力矩步长
 			trqLoop_trqRampstep_down		=	trqLoop_trqRampstep;
 		}
 		else
 		{
-			trqLoop_trqRampstep				=	_IQ15toIQ(EV_MCU_Para.field.Trqloop_UpTrqRamp);
-			trqLoop_trqRampstep_down		=	_IQ15toIQ(EV_MCU_Para.field.Trqloop_DownTrqRamp);
+			trqLoop_trqRampstep				=	_IQ15toIQ(EV_MCU_Para.field.Trqloop_UpTrqRamp);     //1  转矩环上升的步长
+			trqLoop_trqRampstep_down		=	_IQ15toIQ(EV_MCU_Para.field.Trqloop_DownTrqRamp);   //2  转矩环下降的步长
 		}
 
-		if(1 == zero_station_trqCmd_flag)
+		if(1 == zero_station_trqCmd_flag)   //使用驻坡力矩
 		{
 			trqLoop_trqRampstep				=	SysBase.invtorque;
 			trqLoop_trqRampstep_down		=	trqLoop_trqRampstep;
-			if(_IQabs(sysCfgPara.TrqCmd) > _IQmpyI32(10,SysBase.invtorque))
+			if(_IQabs(sysCfgPara.TrqCmd) > _IQmpyI32(10,SysBase.invtorque))    //给定力矩值 > 10
 			{
 				trqLoop_trqRampstep		    =	_IQ15toIQ(EV_MCU_Para.field.Trqloop_UpTrqRamp);
 				trqLoop_trqRampstep_down    =	trqLoop_trqRampstep;
@@ -91,9 +91,9 @@ void trqLoopCtrl(void)
 		trqLoop_trqRampstep = 0;
 		trqLoop_trqRampstep_down = 0;
 	}
-	trqLos();
-	trqRamp();
-	trqidqmap();
+	trqLos();   //失效变量
+	trqRamp();  //计算trqLoop_trqRampref
+	trqidqmap();   //空
 }
 void trqidqmap(void)
 {
@@ -113,8 +113,8 @@ void trqLoscoeff(void)
 
 void trqLos()
 {
-	trqLoop_Lostrqcmd = trqLoop_trqCmd;
-	if(GENERATE_MODE == trqLoop_EleGenMode)
+	trqLoop_Lostrqcmd = trqLoop_trqCmd;   //失效变量
+	if(GENERATE_MODE == trqLoop_EleGenMode)  //发电模式
 	{
 		trqLoop_trqAvl = trqLoopPara.Max_TorqueGen;
 	}
@@ -139,7 +139,7 @@ void trqLos()
 void trqRamp()
 {
 	trqLoop_trqRampcmd=trqLoop_LostrqRef;
-	LinearRamp(trqLoop_trqRampcmd,&trqLoop_trqRampref,
+	LinearRamp(trqLoop_trqRampcmd,&trqLoop_trqRampref,                    //trqLoop_trqRampcmd -> trqLoop_trqRampref -> 力矩环
 			trqLoop_trqRampstep,trqLoop_trqRampstep_down,
 			trqLoop_trqAvl,-trqLoop_trqAvl);
 }

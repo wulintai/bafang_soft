@@ -186,7 +186,7 @@ interrupt void epwm1_timer_isr(void)
 #endif
 
 	Resolver_read();
-	ThetaCal_Resolver();
+	ThetaCal_Resolver();   //电角度计算
 	thetaConfig();
 	sub_adc_handler();
 	vdcConfig();
@@ -214,7 +214,7 @@ interrupt void epwm1_timer_isr(void)
 		voltLoopCtrl(&voltLoopPara);
 		voltLoopOutput();
 	}
-	SpeedCal_Resolver();
+	SpeedCal_Resolver();    //速度计算
 	FaultExpress();
 	IGBT_Clock();
 	//oscview();

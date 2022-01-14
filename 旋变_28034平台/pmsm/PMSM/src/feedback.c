@@ -1243,7 +1243,7 @@ void motorParameterInit(void)
 	Motor_Encoder_offset_coeff = EV_MCU_Para.field.Motor_Encoder_offset_elecoeff;
 }
 
-void motorLookupOffsetTable(void)
+void motorLookupOffsetTable(void)           //电机偏置查表
 {
 	_iq speed = 0;
 	_iq encoder_index_pre = 0;
@@ -1257,14 +1257,14 @@ void motorLookupOffsetTable(void)
 	_iq Motor_Encoder_offset_base = 0;
 	int16 *table = (int *)0;
 
-	speed = _IQ15mpy(sysFbkPara.Speed_fbk_HMI,SysBase.speed);
-	if(1 == EV_MCU_Para.field.Motor_Direction)
+	speed = _IQ15mpy(sysFbkPara.Speed_fbk_HMI,SysBase.speed);           //速度值
+	if(1 == EV_MCU_Para.field.Motor_Direction)    //判断电机方向
 	{
 		speed = 0-speed;
 	}
-	if(speed<-500)
+	if(speed<-500)                                //速度<-500
 	{
-		Motor_Encoder_offset_base = (EV_MCU_Para.field.Motor_Encoder_offset<<3);
+		Motor_Encoder_offset_base = (EV_MCU_Para.field.Motor_Encoder_offset<<3);   //编码器零偏
 		table = (int *)(&encoder_offsetrev[0]);
 	}
 	else
@@ -1279,14 +1279,14 @@ void motorLookupOffsetTable(void)
 	else
 	{
 		encoder_speed_abs = _IQabs(sysFbkPara.Speed_fbk_Filter);
-		if(encoder_speed_abs<TRQ_Table.encoder_minspeed)
+		if(encoder_speed_abs<TRQ_Table.encoder_minspeed)      //编码速度的绝对值<500
 		{
-			Motor_Encoder_offset_current = Motor_Encoder_offset_base;
+			Motor_Encoder_offset_current = Motor_Encoder_offset_base;    //当前的编码器偏置
 		}
-		else if(encoder_speed_abs>=TRQ_Table.encoder_maxspeed)
+		else if(encoder_speed_abs>=TRQ_Table.encoder_maxspeed)//编码速度的绝对值>5500
 		{
-			encoder_index_pre = encoder_index_nex = TRQ_Table.encoder_num-1;
-			Motor_Encoder_offset_current = Motor_Encoder_offset_base+table[encoder_index_nex];
+			encoder_index_pre = encoder_index_nex = TRQ_Table.encoder_num-1;     //11-1
+			Motor_Encoder_offset_current = Motor_Encoder_offset_base+table[encoder_index_nex];   //当前偏置 = 零偏 + 查表值
 		}
 		else
 		{
