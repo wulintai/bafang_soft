@@ -68,7 +68,7 @@ void InitMem(void)
 
 /*******************************************************/
 //==================================
-void main(void)
+void main(void)     //Ô­°æ
 {
 	Uint16 task_index = 0;
 // Initialize System Control registers, PLL, WatchDog, Clocks to default state:
